@@ -4,27 +4,32 @@ Statistics classes responsible for tracking sampling statistics
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
+from rexfw import Parcel
 from rexfw.statistics.writers import ConsoleStatisticsWriter
+from rexfw.statistics.requests import SendStatsRequest
 
 
 class Statistics(object):
 
-    _averages = []
     _elements = []
 
-    def __init__(self, n_replicas, comm, averages=[], stats_writer=None):
+    def __init__(self, name, comm, averages=[], stats_writer=None):
 
-        self._n_replicas = n_replicas
+        self.name = name
         self._comm = comm
         self._stats_writer = ConsoleStatisticsWriter if stats_writer is None else stats_writer
-
+        self._averages = averages
         self._init_averages(averages)
 
-    def _init_averages(self, averages):
-        
-        for avg in averages:
-            self._averages.append(avg)
+    def initialize(self, replica_names):
 
+        self._n_replicas = len(replica_names)
+        self._replica_names = replica_names
+        
+    def _init_averages(self, averages):
+
+        pass
+    
     def update(self, step, element):
 
         self._elements.append(element)
@@ -51,12 +56,11 @@ class Statistics(object):
 
 class MCMCSamplingStatistics(Statistics):
 
-    _averages = {}
     _elements = []
 
-    def __init__(self, n_replicas, comm, averages=None, stats_writer=None):
+    def __init__(self, comm, name='MCMCStats0', averages={}, stats_writer=None):
 
-        super(MCMCSamplingStatistics, self).__init__(n_replicas, comm, averages, stats_writer)
+        super(MCMCSamplingStatistics, self).__init__(name, comm, averages, stats_writer)
     
     def _init_averages(self, averages):
 
@@ -69,22 +73,24 @@ class MCMCSamplingStatistics(Statistics):
         else:
             self._averages.update(**averages)
 
-    def update(self, step, senders=None):
+    def update(self, step, senders):
 
-        element = self._receive_sampling_stats(senders)
+        element = self._get_sampling_stats(senders)
         element.update(step=step)
         self._elements.append(element)
         self._update_averages(step, element)
     
-    def _receive_sampling_stats(self, senders=None):
+    def _get_sampling_stats(self, replicas):
 
-        if not senders is None:
-            raise NotImplementedError
-        senders = xrange(1, self._n_replicas + 1) if senders == None else senders
         results = {}
-        
-        for i in senders:
-            results.update(**{'sampler{}'.format(i): self._comm.recv(source=i).data})
+
+        for r in replicas:
+            request = SendStatsRequest(self.name)
+            parcel = Parcel(self.name, r, request)
+            self._comm.send(parcel, r)
+
+        for r in replicas:
+            results.update(**{'sampler_{}'.format(r): self._comm.recv(source=r).data})
 
         return results
             
@@ -97,7 +103,3 @@ class MCMCSamplingStatistics(Statistics):
             for avg in sampler_stats.iterkeys():
                 if set(sampler_stats[avg].required_field_names).issubset(set(info[key]._fields)):
                     sampler_stats[avg].update(step, info[key])
-
-# class MCMCSamplingStatistics(SamplingStatistics):
-
-    

@@ -16,17 +16,22 @@ class MPICommunicator(AbstractCommunicator):
                 return int(dest[len('replica'):])
             if 'master' in dest:
                 return int(dest[len('master'):])
-            
+            if 'prop' in dest:
+                return int(dest[len('reprop'):])
+            if 'rexex' in dest:
+                return int(dest[len('rexex'):])
+            if 'MCMCStats' in dest:
+                return int(dest[len('MCMCStats'):])
+            if dest == 'all':
+                return MPI.ANY_SOURCE
+
     def send(self, obj, dest):
-        if not self.whatsnext == "send":
-            raise ValueError("Communicator expecting to {0} instead of {1}".format(self.whatsnext,
-                                                                                   "send"))
-        self.comm.send(obj, dest=self._dest_to_rank(dest))
+
+        rank = self._dest_to_rank(dest)
+        self.comm.send(obj, dest=rank)
 
     def recv(self, source):
-        if not self.whatsnext == "send":
-            raise ValueError("Communicator expecting to {0} instead of {1}".format(self.whatsnext,
-                                                                                   "receive"))
-        if source == 'all':
-            source = MPI.ANY_SOURCE
-        return self.comm.recv(source=source)
+
+        src = self._dest_to_rank(source)
+
+        return self.comm.recv(source=self._dest_to_rank(source))

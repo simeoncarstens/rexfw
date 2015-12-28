@@ -10,7 +10,7 @@ from rexfw import Parcel
 class Replica(object):
 
     def __init__(self, name, state, pdf, pdf_params, 
-                 sampler_class, sampler_params, comm, id):
+                 sampler_class, sampler_params, exchangers, comm):
 
         self.name = name
         self.samples = []
@@ -21,8 +21,8 @@ class Replica(object):
         self.pdf_params = pdf_params
         self.sampler_class = sampler_class
         self.sampler_params = sampler_params
+        self.exchangers = exchangers
 
-        self.id = id
         self._comm = comm
         self.simulating = False
 
@@ -43,7 +43,8 @@ class Replica(object):
     def _setup_request_processing_table(self):
 
         self._request_processing_table = dict(
-            SampleRequest='self._sample_and_send_stats({})',
+            SampleRequest='self._sample({})',
+            SendStatsRequest='self._send_stats({})',
             SamplerStatsRequest='self._send_sampler_stats({})',
             ExchangeRequest='self._perform_exchange({})',
             GetStateRequest='self._send_state({})',
@@ -75,10 +76,13 @@ class Replica(object):
     # def _send_state(self, request):
     #     return Parcel(self.id, request.dest, self.state)
 
-    def _sample_and_send_stats(self, request):
+    def _sample(self, request):
         from copy import deepcopy
         res = deepcopy(self._sampler.sample())
         self.state = res
+
+    def _send_stats(self, request):
+
         parcel = Parcel(self.name, request.sender, self._sampler.get_last_draw_stats())
         self._comm.send(parcel, request.sender)
 
@@ -113,13 +117,13 @@ class Replica(object):
     #     self._thread = Thread(target=self._listen)
     #     self._thread.start()
 
-    # def _perform_exchange(self, request):
-    #     partner_id = request.partner_id
-    #     exchanger = None
-    #     exec('exchanger = ' + request.exchanger_name + '(self, request.exchange_params)')
-    #     accepted = exchanger.exchange(self.id, partner_id)
-    #     self.comm.send(Parcel(self.id, request.source, ExchangeResult(accepted)), 
-    #                    dest=request.source)
+    def _perform_exchange(self, request):
+        partner = request.partner
+        exchanger = self.exchangers[request.exchanger]
+        params = request.params
+        accepted = exchanger.exchange(self, partner, params)
+        self.comm.send(Parcel(self.name, request.sender, ExchangeResult(accepted)), 
+                       dest=request.sender)
 
     # def _receive_request(self):
 
@@ -130,20 +134,21 @@ class Replica(object):
     #     self.comm.send(Parcel(self.id, 'replica{}'.format(requesting_replica_id), self.state),
     #                    dest=request.requesting_replica_id)
 
-    # def _send_energy(self, request):
+    def _send_energy(self, request):
 
-    #     self.comm.send(Parcel(self.id, 'replica{}'.format(requesting_replica_id), self.get_energy(state)),
-    #                    dest=request.requesting_replica_id)
+        state = request.state
+        E = self.get_energy() if state is None else self.get_energy(state) 
+        parcel = Parcel(self.name, request.sender, E)
+        self.comm.send(parcel, dest=request.sender)
 
+    @property
+    def energy(self):
 
-    # @property
-    # def energy(self):
-
-    #     return self.get_energy(self.state)
+        return self.get_energy(self.state)
         
-    # def get_energy(self, state):
+    def get_energy(self, state):
 
-    #     return -self.pdf.log_prob(state.position)
+        return -self.pdf.log_prob(state.position)
         
     # def _send_sample_stats(self, accepted):
 

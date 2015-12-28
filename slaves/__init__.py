@@ -32,4 +32,4 @@ class Slave(object):
 
     def _receive_parcel(self):
 
-        return self._comm.recv(source=-1)
+        return self._comm.recv(source='all')

@@ -4,40 +4,47 @@ Proposer classes which propose states for RE, RENS, ... swaps
 
 from abc import ABCMeta, abstractmethod
 
+from rexfw import Parcel
+from rexfw.proposers.requests import GetEnergyRequest
+
 
 class AbstractProposer(object):
 
     __metaclass__ = ABCMeta
 
-    _request_processing_table = dict(
-        CalculateProposalRequest='self.calculate_proposal({})',
-        SendSetStateRequestRequest='self.send_set_state_request_request({})',
-        )
+    def __init__(self, name, comm):
 
-    def process_request(self, request):
-
-        dummy = None
-        return eval(self._request_processing_table[request.__class__.__name__].format('request'))
+        self.name = name
+        self._comm = comm
 
     @abstractmethod
-    def calculate_proposal(self, request):
+    def calculate_proposal(self, local_replica, partner_name, direction, params):
         pass
 
-    def send_set_state_request_request(self, request):
+
+class AbstractREProposer(AbstractProposer):
+
+    def calculate_proposal(self, local_replica, partner_name, direction, params):
         
+        if direction == 'fw':
+            work =   self._get_partner_energy(partner_name, local_replica.state) \
+                   - local_replica.energy()
+            return GeneralTrajectory(local_replica.state, partner_state, work=work)
+        if direction == 'rv':
+            work =   local_replica.get_energy(partner_state) \
+                   - self._get_partner_energy(partner_name)
+            return GeneralTrajectory(partner_state, local_replica.state, work=work)
+
+    @abstractmethod
+    def _get_partner_energy(self, partner_name, state=None):
+        pass
     
 
-class REProposer(AbstractProposer):
+class GeneralREProposer(AbstractREProposer):
+    
+    def _get_partner_energy(self, partner_name, state=None):
 
-    def calculate_proposal(self, request):
+        parcel = Parcel(self.name, partner_name, GetEnergyRequest(self.name, state))
+        self._comm.send(parcel, partner_name)
 
-        target_replica = request.target_replica
-        orig_replica = request.orig_replica
-
-        proposal = self._comm.send_receive(GetStateRequest(), orig_replica)
-        energy = self._postmaster.send_receive(GetEnergyRequest(proposal), target_replica)
-        self._buffered_proposal = proposal
-        self._buffered_request = requesting_replica_request
-        return Parcel(request.dest, request.source, energy)
-        
-        
+        return self._comm.recv(source=partner_name).data 
