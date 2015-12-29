@@ -5,12 +5,12 @@ Replica classes which sample from a single PDF
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 from rexfw import Parcel
-
+from rexfw.replicas.requests import GetStateAndEnergyRequest, StoreStateEnergyRequest
 
 class Replica(object):
 
     def __init__(self, name, state, pdf, pdf_params, 
-                 sampler_class, sampler_params, exchangers, comm):
+                 sampler_class, sampler_params, proposers, comm):
 
         self.name = name
         self.samples = []
@@ -21,7 +21,7 @@ class Replica(object):
         self.pdf_params = pdf_params
         self.sampler_class = sampler_class
         self.sampler_params = sampler_params
-        self.exchangers = exchangers
+        self.proposers = proposers
 
         self._comm = comm
         self.simulating = False
@@ -46,11 +46,14 @@ class Replica(object):
             SampleRequest='self._sample({})',
             SendStatsRequest='self._send_stats({})',
             SamplerStatsRequest='self._send_sampler_stats({})',
-            ExchangeRequest='self._perform_exchange({})',
-            GetStateRequest='self._send_state({})',
-            SetStateRequest='self._set_state_from_request({})',
-            GetEnergyRequest='self._send_energy({})',
-            DumpSamplesRequest='self._dump_samples({})',
+            ProposeRequest='self._propose({})',
+            AcceptBufferedProposalRequest='self._accept_buffered_proposal({})',
+            SendGetStateAndEnergyRequest='self._send_get_state_and_energy_request({})',
+            # GetStateAndEnergyRequest_master='self._receive_state_and_energy({})',
+            StoreStateEnergyRequest='self._store_state_energy({})',
+            GetStateAndEnergyRequest='self._send_state_and_energy({})',
+            # GetEnergyRequest='self._send_energy({})',
+            # DumpSamplesRequest='self._dump_samples({})',
             DieRequest='-1')
         
     def _setup_sampler(self):
@@ -70,12 +73,23 @@ class Replica(object):
         if not self._sampler is None:
             self._sampler._state = value
 
-    # def _set_state_from_request(self, request):
-    #     self.state = request.state
+    def _send_state_and_energy(self, request):
 
-    # def _send_state(self, request):
-    #     return Parcel(self.id, request.dest, self.state)
+        self._current_master = request.sender
+        request = StoreStateEnergyRequest(request.sender, self.state, self.energy)
+        self._comm.send(Parcel(self.name, request.sender, request), request.sender)
 
+    def _send_get_state_and_energy_request(self, request):
+
+        self._comm.send(Parcel(self.name, request.partner, GetStateAndEnergyRequest(self.name)), 
+                        request.partner)    
+
+    def _store_state_energy(self, request):
+
+        self._buffered_partner_state = request.state
+        self._buffered_partner_energy = request.energy
+        self._comm.send(self._current_master, dest='master0')
+    
     def _sample(self, request):
         from copy import deepcopy
         res = deepcopy(self._sampler.sample())
@@ -103,43 +117,30 @@ class Replica(object):
         dummy = None
         return eval(self._request_processing_table[request.__class__.__name__].format('request'))
     
-    # def _listen(self):
+    def _propose(self, request):
 
-    #     while True:
-    #         request = self._receive_request()
-    #         if self._process_request(request) == -1:
-    #             break
-
-    # def listen(self):
-
-    #     from threading import Thread
-
-    #     self._thread = Thread(target=self._listen)
-    #     self._thread.start()
-
-    def _perform_exchange(self, request):
-        partner = request.partner
-        exchanger = self.exchangers[request.exchanger]
+        partner_name = request.partner
         params = request.params
-        accepted = exchanger.exchange(self, partner, params)
-        self.comm.send(Parcel(self.name, request.sender, ExchangeResult(accepted)), 
-                       dest=request.sender)
 
-    # def _receive_request(self):
+        proposer = list(set(self.proposers.keys()).intersection(set(params.proposers)))[-1]
+        proposal = self.proposers[proposer].propose(self, 
+                                                    self._buffered_partner_state,
+                                                    self._buffered_partner_energy,
+                                                    params)
+        self._comm.send(Parcel(self.name, 'master0', float(proposal.work)), 'master0')
+        self._buffered_proposal = proposal[-1]
 
-    #     return self.comm.recv(source=MPI.ANY_SOURCE)
+    def _accept_buffered_proposal(self, request):
 
-    # def _send_state(self, request):
-
-    #     self.comm.send(Parcel(self.id, 'replica{}'.format(requesting_replica_id), self.state),
-    #                    dest=request.requesting_replica_id)
-
+        if request.accept:
+            self.state = self._buffered_proposal
+        
     def _send_energy(self, request):
 
         state = request.state
         E = self.get_energy() if state is None else self.get_energy(state) 
         parcel = Parcel(self.name, request.sender, E)
-        self.comm.send(parcel, dest=request.sender)
+        self._comm.send(parcel, dest=request.sender)
 
     @property
     def energy(self):
@@ -149,40 +150,3 @@ class Replica(object):
     def get_energy(self, state):
 
         return -self.pdf.log_prob(state.position)
-        
-    # def _send_sample_stats(self, accepted):
-
-    #     self.comm.send(Parcel(self.id, request.sender, accepted),
-    #                    dest=request.sender)
-
-    # def _send_sampler_stats(self):
-
-    #     self.comm.send(Parcel(self.id, request.sender, self._sampler.sampling_stats), 
-    #                    dest=request.sender)
-
-
-# class AbstractSimpleReplica(AbstractReplica):
-
-#     def __init__(self, *args):
-
-#         super(AbstractSimpleReplica, self).__init__(*args)
-        
-#         self.request_up_to_date = False
-
-#     def _receive_request(self):
-
-#         if self.request_up_to_date:
-#             self.request_up_to_date = False
-#             return self.request
-#         else:
-#             return
-
-#     def terminate(self):
-
-#         self.request = DieRequest()
-#         self.request_up_to_date = True
-
-
-# class AbstractMPIReplica(AbstractReplica):
-
-#     comm = MPICommunicator()

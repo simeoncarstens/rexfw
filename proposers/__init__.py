@@ -5,9 +5,17 @@ Proposer classes which propose states for RE, RENS, ... swaps
 from abc import ABCMeta, abstractmethod
 
 from rexfw import Parcel
-from rexfw.proposers.requests import GetEnergyRequest
 
+class GeneralTrajectory(list):
 
+    def __init__(self, items, work=0.0, heat=0.0):
+
+        super(GeneralTrajectory, self).__init__(items)
+
+        self.work = work
+        self.heat = heat
+        
+        
 class AbstractProposer(object):
 
     __metaclass__ = ABCMeta
@@ -18,33 +26,15 @@ class AbstractProposer(object):
         self._comm = comm
 
     @abstractmethod
-    def calculate_proposal(self, local_replica, partner_name, direction, params):
+    def propose(self, local_replica, partner_state, partner_energy, params):
         pass
 
 
-class AbstractREProposer(AbstractProposer):
+class REProposer(AbstractProposer):
 
-    def calculate_proposal(self, local_replica, partner_name, direction, params):
-        
-        if direction == 'fw':
-            work =   self._get_partner_energy(partner_name, local_replica.state) \
-                   - local_replica.energy()
-            return GeneralTrajectory(local_replica.state, partner_state, work=work)
-        if direction == 'rv':
-            work =   local_replica.get_energy(partner_state) \
-                   - self._get_partner_energy(partner_name)
-            return GeneralTrajectory(partner_state, local_replica.state, work=work)
+    def propose(self, local_replica, partner_state, partner_energy, params):
 
-    @abstractmethod
-    def _get_partner_energy(self, partner_name, state=None):
-        pass
-    
+        work =   local_replica.get_energy(partner_state) \
+               - partner_energy
 
-class GeneralREProposer(AbstractREProposer):
-    
-    def _get_partner_energy(self, partner_name, state=None):
-
-        parcel = Parcel(self.name, partner_name, GetEnergyRequest(self.name, state))
-        self._comm.send(parcel, partner_name)
-
-        return self._comm.recv(source=partner_name).data 
+        return GeneralTrajectory([partner_state, partner_state], work=work)

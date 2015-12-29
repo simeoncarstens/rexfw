@@ -16,7 +16,7 @@ class MPICommunicator(AbstractCommunicator):
                 return int(dest[len('replica'):])
             if 'master' in dest:
                 return int(dest[len('master'):])
-            if 'prop' in dest:
+            if 'reprop' in dest:
                 return int(dest[len('reprop'):])
             if 'rexex' in dest:
                 return int(dest[len('rexex'):])
@@ -28,10 +28,18 @@ class MPICommunicator(AbstractCommunicator):
     def send(self, obj, dest):
 
         rank = self._dest_to_rank(dest)
+
         self.comm.send(obj, dest=rank)
 
     def recv(self, source):
 
-        src = self._dest_to_rank(source)
+        rank = self._dest_to_rank(source)
 
-        return self.comm.recv(source=self._dest_to_rank(source))
+        return self.comm.recv(source=rank)
+
+    def sendrecv(self, obj, dest):
+
+        rank = self._dest_to_rank(dest)
+
+        return self.comm.sendrecv(obj, dest=rank)
+        

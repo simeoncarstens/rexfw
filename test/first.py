@@ -18,19 +18,23 @@ replica_names = ['replica{}'.format(i) for i in range(1, size)]
 if rank == 0:
 
     from rexfw.remasters import ReplicaExchangeMaster
-    from rexfw.statistics import MCMCSamplingStatistics
+    from rexfw.statistics import MCMCSamplingStatistics, REStatistics
     from rexfw.statistics.averages import AcceptanceRateAverage
 
     pacc_avg = AcceptanceRateAverage()
     local_pacc_avgs = {'sampler_{}'.format(r): {'p_acc': AcceptanceRateAverage()} for r in replica_names}
+    re_pacc_avgs = {'{0}_{1}'.format(r1,r2): {'p_acc': AcceptanceRateAverage()} for r1 in replica_names for r2 in replica_names}
     stats = MCMCSamplingStatistics(comm, averages=local_pacc_avgs)
-    master = ReplicaExchangeMaster('master0', replica_names, comm=comm, sampling_statistics=stats)
+    re_stats = REStatistics(averages=re_pacc_avgs)
+    master = ReplicaExchangeMaster('master0', replica_names, comm=comm, 
+                                   sampling_statistics=stats, swap_statistics=re_stats)
 
-    master.run(5000, swap_interval=10, status_interval=1000, dump_interval=1000, 
+    master.run(1100, swap_interval=10, status_interval=1000, dump_interval=1000, 
                samples_folder='/baycells/scratch/carstens/test/', dump_step=1)
     master.terminate_replicas()
 
-    print "p_acc:", master.sampling_statistics.averages['sampler_replica2']['p_acc'].value
+    print "RWMC p_acc:", master.sampling_statistics.averages['sampler_replica1']['p_acc'].value
+    print "r1 r2 p_acc:", master.swap_statistics.averages['replica1_replica2']['p_acc']
 
 else:
 
@@ -40,14 +44,22 @@ else:
     from rexfw.replicas import Replica
     from rexfw.slaves import Slave
     from rexfw.samplers.rwmc import CompatibleRWMCSampler, RWMCSampleStats
-    from rexfw.exchangers import ReplicaExchanger
-    from rexfw.proposers import GeneralREProposer
+    from rexfw.proposers import REProposer
 
-    proposer = GeneralREProposer('reprop{}'.format(rank), comm)
-    exchangers = {'rexex{}'.format(rank): ReplicaExchanger(proposer, comm)}
+    class MyNormal(Normal):
+
+        def log_prob(self, x):
+            return super(MyNormal, self).log_prob(x[0])
+    
+    proposer = REProposer('reprop{}'.format(rank), comm)
+    proposers = {proposer.name: proposer}
+
+    numpy.random.seed(rank)
+
+    sigmas = numpy.linspace(1,100.1, size)
     replica = Replica('replica{}'.format(rank), State(numpy.random.normal(size=1)), 
-                      Normal(), {}, CompatibleRWMCSampler, 
-                      {'stepsize': 0.75}, exchangers, comm)
+                      MyNormal(sigma=sigmas[rank - 1]), {}, CompatibleRWMCSampler, 
+                      {'stepsize': 0.75}, proposers, comm)
     slave = Slave({'replica{}'.format(rank): replica}, comm)
 
     slave.listen()

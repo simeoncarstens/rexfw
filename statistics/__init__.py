@@ -13,10 +13,9 @@ class Statistics(object):
 
     _elements = []
 
-    def __init__(self, name, comm, averages=[], stats_writer=None):
+    def __init__(self, name, averages=[], stats_writer=None):
 
         self.name = name
-        self._comm = comm
         self._stats_writer = ConsoleStatisticsWriter if stats_writer is None else stats_writer
         self._averages = averages
         self._init_averages(averages)
@@ -60,7 +59,9 @@ class MCMCSamplingStatistics(Statistics):
 
     def __init__(self, comm, name='MCMCStats0', averages={}, stats_writer=None):
 
-        super(MCMCSamplingStatistics, self).__init__(name, comm, averages, stats_writer)
+        super(MCMCSamplingStatistics, self).__init__(name, averages, stats_writer)
+
+        self._comm = comm
     
     def _init_averages(self, averages):
 
@@ -103,3 +104,20 @@ class MCMCSamplingStatistics(Statistics):
             for avg in sampler_stats.iterkeys():
                 if set(sampler_stats[avg].required_field_names).issubset(set(info[key]._fields)):
                     sampler_stats[avg].update(step, info[key])
+
+
+class REStatistics(Statistics):
+
+    def __init__(self, name='REStats0', averages={}, stats_writer=None):
+
+        super(REStatistics, self).__init__(name, averages, stats_writer)
+
+    def _update_averages(self, step, info):
+
+        for key in info.iterkeys():
+            if key == 'step':
+                continue
+            ex_stats = self._averages[key]
+            for avg in ex_stats.iterkeys():
+                if set(ex_stats[avg].required_field_names).issubset(set(info[key]._fields)):
+                    ex_stats[avg].update(step, info[key])

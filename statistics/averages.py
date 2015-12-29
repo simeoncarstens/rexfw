@@ -43,6 +43,10 @@ class AbstractAverage(object):
     @property
     def value(self):
         return self._value
+
+    def __repr__(self):
+
+        return str(self._value)
     
 class AcceptanceRateAverage(AbstractAverage):
 
