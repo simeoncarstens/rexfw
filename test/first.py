@@ -44,14 +44,18 @@ else:
     from rexfw.replicas import Replica
     from rexfw.slaves import Slave
     from rexfw.samplers.rwmc import CompatibleRWMCSampler, RWMCSampleStats
-    from rexfw.proposers import REProposer
+    from rexfw.proposers import REProposer, LMDRENSProposer
 
     class MyNormal(Normal):
 
         def log_prob(self, x):
             return super(MyNormal, self).log_prob(x[0])
+
+        def gradient(self, x):
+            return 0.5 * x / self['sigma'] / self['sigma']
     
-    proposer = REProposer('reprop{}'.format(rank), comm)
+    # proposer = REProposer('reprop{}'.format(rank), comm)
+    proposer = LMDRENSProposer('lmdrensprop{}'.format(rank), comm)
     proposers = {proposer.name: proposer}
 
     numpy.random.seed(rank)

@@ -121,12 +121,13 @@ class Replica(object):
 
         partner_name = request.partner
         params = request.params
+        proposer_params = params.proposer_params
 
         proposer = list(set(self.proposers.keys()).intersection(set(params.proposers)))[-1]
         proposal = self.proposers[proposer].propose(self, 
                                                     self._buffered_partner_state,
                                                     self._buffered_partner_energy,
-                                                    params)
+                                                    proposer_params)
         self._comm.send(Parcel(self.name, 'master0', float(proposal.work)), 'master0')
         self._buffered_proposal = proposal[-1]
 

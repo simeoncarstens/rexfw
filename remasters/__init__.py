@@ -8,8 +8,8 @@ from rexfw.remasters.requests import GetStateAndEnergyRequest_master, SendGetSta
 
 from collections import namedtuple
 
-ExchangeParams = namedtuple('ExchangeParams', 'proposers')
-
+ExchangeParams = namedtuple('ExchangeParams', 'proposers proposer_params')
+LMDRENSParams = namedtuple('LMDRENSParams', 'n_steps timestep gamma pdf_params')
 REStats = namedtuple('REStats', 'accepted')
 
 class ReplicaExchangeMaster(object):
@@ -72,8 +72,6 @@ class ReplicaExchangeMaster(object):
                 self._comm.send(parcel, r2)
 
         return acc
-        
-              
             
     def _calculate_swap_list(self, i):
         '''
@@ -84,7 +82,8 @@ class ReplicaExchangeMaster(object):
         # if len(swap_list) == 0:
         #     swap_list.append(0)
 
-        swap_list = [['replica1', 'replica2', ExchangeParams(('reprop1', 'reprop2'))]]
+        # swap_list = [['replica1', 'replica2', ExchangeParams(('reprop1', 'reprop2'), None)]]
+        swap_list = [['replica1', 'replica2', ExchangeParams(('lmdrensprop1', 'lmdrensprop2'), LMDRENSParams(50, 0.05, 0.1, {'sigma': [1.0, 3.0]}))]]
         
         return swap_list
 
@@ -93,20 +92,6 @@ class ReplicaExchangeMaster(object):
         ex_replicas = [[x[0], x[1]] for x in swap_list]
         ex_replicas = [x for z in ex_replicas for x in z]
         return list(set(ex_replicas).difference(self.replica_names))
-
-    # def _send_border_replica_sample_requests(self, swap_list):
-
-    #     if len(swap_list) > 0:
-    #         sampling = []
-    #         if not 0 in swap_list:
-    #             sampling.append(0)
-    #             self._send_sample_requests(targets=[0])
-    #         if not self._n_replicas - 2 in swap_list and self._n_replicas - 2 != 0:
-    #             sampling.append(self._n_replicas - 1)
-    #             self._send_sample_requests(targets=[self._n_replicas - 1])
-
-            # stats = self._receive_sample_stats(sampling)
-            # self._update_sampler_stats(stats)
 
     def run(self, n_iterations, swap_interval=5, status_interval=100, samples_folder=None, 
             dump_interval=250, dump_step=5):
