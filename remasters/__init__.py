@@ -12,9 +12,47 @@ ExchangeParams = namedtuple('ExchangeParams', 'proposers proposer_params')
 LMDRENSParams = namedtuple('LMDRENSParams', 'n_steps timestep gamma pdf_params')
 REStats = namedtuple('REStats', 'accepted')
 
-class ReplicaExchangeMaster(object):
 
-    def __init__(self, name, replica_names, comm, sampling_statistics=None, swap_statistics=None, id_offset=1):
+class AbstractSwapListGenerator(object):
+
+    __metaclass__ = ABCMeta
+    
+    @abstractmethod
+    def generate_swap_list(self, step):
+        pass
+
+class AbstractStandardSwapListGenerator(AbstractSwapListGenerator):
+
+    _which = 0
+    
+    def __init__(self, n_replicas, param_list):
+
+        self._n_replicas = n_replicas
+        self._replica_list = ['replica{}'.format(i) for i in range(1, self._n_replicas + 1)]
+        self._proposer_list = ['prop{}'.format(i) for i in range(1, self._n_replicas + 1)]
+        self._param_list = param_list
+        
+    def generate_swap_list(self_):
+
+        swap_list = zip(self._replica_list[self._which::2],
+                        self._replica_list[self._which + 1::2].
+                        self._param_List[self._which::2])
+        
+        self._which = int(not self._which)
+
+        return swap_list
+
+class REStandardSwapListGenerator(AbstractStandardSwapListGenerator):
+
+    def __init__(self, n_replicas):
+
+        param_list = [None for _ in range(n_replicas - 1)]
+        super(REStandardSwapListGenerator, self).__init__(n_replicas, param_list)
+    
+    
+class ExchangeMaster(object):
+
+    def __init__(self, name, replica_names, swap_list_generator, sampling_statistics, swap_statistics, comm):
 
         self.name = name
         self.replica_names = replica_names
@@ -22,6 +60,7 @@ class ReplicaExchangeMaster(object):
         self.sampling_statistics = sampling_statistics
         self.swap_statistics = swap_statistics
         self._comm = comm
+        self._swap_list_generator = swap_list_generator
         self.step = 0
 
         self.sampling_statistics.initialize(self.replica_names)
@@ -50,10 +89,6 @@ class ReplicaExchangeMaster(object):
             works[i][0] = self._comm.recv(source=r1).data
             works[i][1] = self._comm.recv(source=r2).data
 
-        for i, (r1, r2, params) in enumerate(swap_list):
-            self._send_propose_request(r2, r1, params)
-            works[i][1] = self._comm.recv(source=r2).data
-
         import numpy
         acc = numpy.exp(-numpy.sum(works,1)) > numpy.random.uniform(size=len(works))
         
@@ -74,23 +109,20 @@ class ReplicaExchangeMaster(object):
         return acc
             
     def _calculate_swap_list(self, i):
-        '''
-        This can be modified to implement, e.g., Yannick's convective RE
-        '''
 
+        return self._swap_list_generator.generate_swap_list(step=i)
         # swap_list = range(self._n_replicas - 1)[self.exchange_counter % 2 != 0::2]
         # if len(swap_list) == 0:
         #     swap_list.append(0)
 
         # swap_list = [['replica1', 'replica2', ExchangeParams(('reprop1', 'reprop2'), None)]]
-        swap_list = [['replica1', 'replica2', ExchangeParams(('lmdrensprop1', 'lmdrensprop2'), LMDRENSParams(50, 0.05, 0.1, {'sigma': [1.0, 3.0]}))]]
+        # swap_list = [['replica1', 'replica2', ExchangeParams(('lmdrensprop1', 'lmdrensprop2'), LMDRENSParams(50, 0.05, 0.1, {'sigma': [1.0, 3.0]}))]]
         
-        return swap_list
-
     def _get_no_ex_replicas(self, swap_list):
 
         ex_replicas = [[x[0], x[1]] for x in swap_list]
         ex_replicas = [x for z in ex_replicas for x in z]
+
         return list(set(ex_replicas).difference(self.replica_names))
 
     def run(self, n_iterations, swap_interval=5, status_interval=100, samples_folder=None, 
@@ -130,3 +162,6 @@ class ReplicaExchangeMaster(object):
             parcel = Parcel(self.name, r, DieRequest(self.name))
             self._comm.send(parcel, dest=r)
 
+class SimpleReplicaExchangeMaster(AbstractExchangeMaster):
+
+    pass

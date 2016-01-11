@@ -14,6 +14,7 @@ n_replicas = size - 1
 comm = MPICommunicator()
 
 replica_names = ['replica{}'.format(i) for i in range(1, size)]
+proposer_names = ['lmdrensprop{}'.format(i) for i in range(1, size)]
 
 if rank == 0:
 
@@ -52,18 +53,18 @@ else:
             return super(MyNormal, self).log_prob(x[0])
 
         def gradient(self, x):
-            return 0.5 * x / self['sigma'] / self['sigma']
+            return x / self['sigma'] / self['sigma']
     
     # proposer = REProposer('reprop{}'.format(rank), comm)
-    proposer = LMDRENSProposer('lmdrensprop{}'.format(rank), comm)
+    proposer = LMDRENSProposer(proposer_names[rank-1], comm)
     proposers = {proposer.name: proposer}
 
     numpy.random.seed(rank)
 
     sigmas = numpy.linspace(1,100.1, size)
-    replica = Replica('replica{}'.format(rank), State(numpy.random.normal(size=1)), 
+    replica = Replica(replica_names[rank-1], State(numpy.random.normal(size=1)), 
                       MyNormal(sigma=sigmas[rank - 1]), {}, CompatibleRWMCSampler, 
                       {'stepsize': 0.75}, proposers, comm)
-    slave = Slave({'replica{}'.format(rank): replica}, comm)
+    slave = Slave({replica_names[rank-1]: replica}, comm)
 
     slave.listen()
