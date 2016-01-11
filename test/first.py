@@ -30,7 +30,7 @@ if rank == 0:
     master = StandardReplicaExchangeMaster('master0', replica_names, comm=comm, 
                                            sampling_statistics=stats, swap_statistics=re_stats)
 
-    master.run(1100, swap_interval=10, status_interval=1000, dump_interval=1000, 
+    master.run(5001, swap_interval=10, status_interval=1000, dump_interval=1000, 
                samples_folder='/baycells/scratch/carstens/test/', dump_step=1)
     master.terminate_replicas()
 

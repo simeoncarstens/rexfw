@@ -55,7 +55,7 @@ class Replica(object):
             StoreStateEnergyRequest='self._store_state_energy({})',
             GetStateAndEnergyRequest='self._send_state_and_energy({})',
             # GetEnergyRequest='self._send_energy({})',
-            # DumpSamplesRequest='self._dump_samples({})',
+            DumpSamplesRequest='self._dump_samples({})',
             DieRequest='-1')
         
     def _setup_sampler(self):
@@ -102,17 +102,15 @@ class Replica(object):
         parcel = Parcel(self.name, request.sender, self._sampler.get_last_draw_stats())
         self._comm.send(parcel, request.sender)
 
-    # def _dump_samples(self, request):
-    #     smin = request.smin
-    #     smax = request.smax
-        
-    #     with open(request.samples_folder + 'samples_replica'+str(self.id)+'_'+str(smin)+'-'+str(smax)+'.pickle', 'w') as opf:
-    #         from cPickle import dump
-    #         dump(self.samples[request.smin:request.smax:request.dump_step], opf, 2)
+    def _dump_samples(self, request):
 
-    # def _send_sampler_stats(self, request):
-
-    #     return Parcel(self.id, 0, self._sampler.sampling_stats)
+        filename = '{}samples_{}_{}-{}.pickle'.format(request.samples_folder, 
+                                                      self.name, 
+                                                      request.s_min, 
+                                                      request.s_max)
+        with open(filename, 'w') as opf:
+            from cPickle import dump
+            dump(self.samples[request.s_min:request.s_max:request.dump_step], opf, 2)
     
     def process_request(self, request):
 
@@ -136,8 +134,11 @@ class Replica(object):
 
     def _accept_buffered_proposal(self, request):
 
+        from copy import deepcopy
+        
         if request.accept:
             self.state = self._buffered_proposal
+        self.samples.append(deepcopy(self.state))
         
     def _send_energy(self, request):
 

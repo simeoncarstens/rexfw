@@ -5,6 +5,7 @@ Master classes implementing exchange criteria for RE and derived algorithms
 from rexfw import Parcel
 from rexfw.remasters.requests import SampleRequest, DieRequest, ProposeRequest, AcceptBufferedProposalRequest
 from rexfw.remasters.requests import GetStateAndEnergyRequest_master, SendGetStateAndEnergyRequest
+from rexfw.remasters.requests import DumpSamplesRequest
 
 from collections import namedtuple
 from abc import ABCMeta, abstractmethod
@@ -98,9 +99,11 @@ class ExchangeMaster(object):
             else:
                 self._send_sample_requests(self.replica_names)
                 self.sampling_statistics.update(self.step, self.replica_names)
+                
+            if i % dump_interval == 0 and i > 0:
+                self._send_dump_samples_request(samples_folder, i - dump_interval, i, dump_step)
 
             self.step += 1
-
 
     def _send_sample_requests(self, targets):
 
@@ -108,11 +111,11 @@ class ExchangeMaster(object):
             parcel = Parcel(self.name, t, SampleRequest(self.name))
             self._comm.send(parcel, dest=t)
 
-    # def _send_dump_samples_request(self, samples_folder, smin, smax, dump_step):
+    def _send_dump_samples_request(self, samples_folder, smin, smax, dump_step):
 
-    #     for i in xrange(self._n_replicas):
-    #         self._comm.send(DumpSamplesRequest(samples_folder, smin, smax, dump_step),
-    #                        dest=self.id_offset+i)
+        for r in self.replica_names:
+            request = DumpSamplesRequest(self.name, samples_folder, smin, smax, dump_step)
+            self._comm.send(Parcel(self.name, r, request), dest=r)
         
     def terminate_replicas(self):
 
