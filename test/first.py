@@ -14,11 +14,11 @@ n_replicas = size - 1
 comm = MPICommunicator()
 
 replica_names = ['replica{}'.format(i) for i in range(1, size)]
-proposer_names = ['lmdrensprop{}'.format(i) for i in range(1, size)]
+proposer_names = ['prop{}'.format(i) for i in range(1, size)]
 
 if rank == 0:
 
-    from rexfw.remasters import ReplicaExchangeMaster
+    from rexfw.remasters import StandardReplicaExchangeMaster
     from rexfw.statistics import MCMCSamplingStatistics, REStatistics
     from rexfw.statistics.averages import AcceptanceRateAverage
 
@@ -27,8 +27,8 @@ if rank == 0:
     re_pacc_avgs = {'{0}_{1}'.format(r1,r2): {'p_acc': AcceptanceRateAverage()} for r1 in replica_names for r2 in replica_names}
     stats = MCMCSamplingStatistics(comm, averages=local_pacc_avgs)
     re_stats = REStatistics(averages=re_pacc_avgs)
-    master = ReplicaExchangeMaster('master0', replica_names, comm=comm, 
-                                   sampling_statistics=stats, swap_statistics=re_stats)
+    master = StandardReplicaExchangeMaster('master0', replica_names, comm=comm, 
+                                           sampling_statistics=stats, swap_statistics=re_stats)
 
     master.run(1100, swap_interval=10, status_interval=1000, dump_interval=1000, 
                samples_folder='/baycells/scratch/carstens/test/', dump_step=1)
@@ -55,8 +55,8 @@ else:
         def gradient(self, x):
             return x / self['sigma'] / self['sigma']
     
-    # proposer = REProposer('reprop{}'.format(rank), comm)
-    proposer = LMDRENSProposer(proposer_names[rank-1], comm)
+    proposer = REProposer('prop{}'.format(rank), comm)
+    # proposer = LMDRENSProposer(proposer_names[rank-1], comm)
     proposers = {proposer.name: proposer}
 
     numpy.random.seed(rank)

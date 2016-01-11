@@ -9,6 +9,8 @@ from rexfw.replicas.requests import GetStateAndEnergyRequest, StoreStateEnergyRe
 
 class Replica(object):
 
+    _current_master = None
+    
     def __init__(self, name, state, pdf, pdf_params, 
                  sampler_class, sampler_params, proposers, comm):
 
@@ -122,13 +124,14 @@ class Replica(object):
         partner_name = request.partner
         params = request.params
         proposer_params = params.proposer_params
-
+        self._current_master = request.sender
+        
         proposer = list(set(self.proposers.keys()).intersection(set(params.proposers)))[-1]
         proposal = self.proposers[proposer].propose(self, 
                                                     self._buffered_partner_state,
                                                     self._buffered_partner_energy,
                                                     proposer_params)
-        self._comm.send(Parcel(self.name, 'master0', float(proposal.work)), 'master0')
+        self._comm.send(Parcel(self.name, self._current_master, float(proposal.work)), self._current_master)
         self._buffered_proposal = proposal[-1]
 
     def _accept_buffered_proposal(self, request):

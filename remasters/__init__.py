@@ -7,49 +7,11 @@ from rexfw.remasters.requests import SampleRequest, DieRequest, ProposeRequest, 
 from rexfw.remasters.requests import GetStateAndEnergyRequest_master, SendGetStateAndEnergyRequest
 
 from collections import namedtuple
+from abc import ABCMeta, abstractmethod
 
-ExchangeParams = namedtuple('ExchangeParams', 'proposers proposer_params')
-LMDRENSParams = namedtuple('LMDRENSParams', 'n_steps timestep gamma pdf_params')
 REStats = namedtuple('REStats', 'accepted')
 
 
-class AbstractSwapListGenerator(object):
-
-    __metaclass__ = ABCMeta
-    
-    @abstractmethod
-    def generate_swap_list(self, step):
-        pass
-
-class AbstractStandardSwapListGenerator(AbstractSwapListGenerator):
-
-    _which = 0
-    
-    def __init__(self, n_replicas, param_list):
-
-        self._n_replicas = n_replicas
-        self._replica_list = ['replica{}'.format(i) for i in range(1, self._n_replicas + 1)]
-        self._proposer_list = ['prop{}'.format(i) for i in range(1, self._n_replicas + 1)]
-        self._param_list = param_list
-        
-    def generate_swap_list(self_):
-
-        swap_list = zip(self._replica_list[self._which::2],
-                        self._replica_list[self._which + 1::2].
-                        self._param_List[self._which::2])
-        
-        self._which = int(not self._which)
-
-        return swap_list
-
-class REStandardSwapListGenerator(AbstractStandardSwapListGenerator):
-
-    def __init__(self, n_replicas):
-
-        param_list = [None for _ in range(n_replicas - 1)]
-        super(REStandardSwapListGenerator, self).__init__(n_replicas, param_list)
-    
-    
 class ExchangeMaster(object):
 
     def __init__(self, name, replica_names, swap_list_generator, sampling_statistics, swap_statistics, comm):
@@ -72,6 +34,8 @@ class ExchangeMaster(object):
 
     def _perform_exchanges(self, swap_list):
 
+        ## TODO: refactor this into smaller functions
+        
         works = [[0.0, 0.0]] * len(swap_list)
         for i, (r1, r2, params) in enumerate(swap_list):
             self._comm.send(Parcel(self.name, r2, SendGetStateAndEnergyRequest(self.name, r1)), r2)
@@ -95,7 +59,7 @@ class ExchangeMaster(object):
         for i, (r1, r2, params) in enumerate(swap_list):
             oui = acc[i]
             
-            if acc:
+            if oui:
                 parcel = Parcel(self.name, r1, AcceptBufferedProposalRequest(self.name, True))
                 self._comm.send(parcel, r1)
                 parcel = Parcel(self.name, r2, AcceptBufferedProposalRequest(self.name, True))
@@ -111,12 +75,6 @@ class ExchangeMaster(object):
     def _calculate_swap_list(self, i):
 
         return self._swap_list_generator.generate_swap_list(step=i)
-        # swap_list = range(self._n_replicas - 1)[self.exchange_counter % 2 != 0::2]
-        # if len(swap_list) == 0:
-        #     swap_list.append(0)
-
-        # swap_list = [['replica1', 'replica2', ExchangeParams(('reprop1', 'reprop2'), None)]]
-        # swap_list = [['replica1', 'replica2', ExchangeParams(('lmdrensprop1', 'lmdrensprop2'), LMDRENSParams(50, 0.05, 0.1, {'sigma': [1.0, 3.0]}))]]
         
     def _get_no_ex_replicas(self, swap_list):
 
@@ -162,6 +120,13 @@ class ExchangeMaster(object):
             parcel = Parcel(self.name, r, DieRequest(self.name))
             self._comm.send(parcel, dest=r)
 
-class SimpleReplicaExchangeMaster(AbstractExchangeMaster):
+class StandardReplicaExchangeMaster(ExchangeMaster):
 
-    pass
+    def __init__(self, name, replica_names, sampling_statistics, swap_statistics, comm):
+
+        from rexfw.slgenerators import REStandardSwapListGenerator
+        
+        swap_list_generator = REStandardSwapListGenerator(len(replica_names))
+
+        super(StandardReplicaExchangeMaster, self).__init__(name, replica_names, swap_list_generator,
+                                                            sampling_statistics, swap_statistics, comm)
