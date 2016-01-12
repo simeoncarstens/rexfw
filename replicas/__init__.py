@@ -51,10 +51,8 @@ class Replica(object):
             ProposeRequest='self._propose({})',
             AcceptBufferedProposalRequest='self._accept_buffered_proposal({})',
             SendGetStateAndEnergyRequest='self._send_get_state_and_energy_request({})',
-            # GetStateAndEnergyRequest_master='self._receive_state_and_energy({})',
             StoreStateEnergyRequest='self._store_state_energy({})',
             GetStateAndEnergyRequest='self._send_state_and_energy({})',
-            # GetEnergyRequest='self._send_energy({})',
             DumpSamplesRequest='self._dump_samples({})',
             DieRequest='-1')
         

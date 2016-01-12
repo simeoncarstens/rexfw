@@ -36,6 +36,7 @@ if rank == 0:
 
     print "RWMC p_acc:", master.sampling_statistics.averages['sampler_replica1']['p_acc'].value
     print "r1 r2 p_acc:", master.swap_statistics.averages['replica1_replica2']['p_acc']
+    from cPickle import dump; dump(master.swap_statistics.elements, open('/tmp/stats.pickle','w'))
 
 else:
 

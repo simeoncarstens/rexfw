@@ -10,7 +10,7 @@ from rexfw.remasters.requests import DumpSamplesRequest
 from collections import namedtuple
 from abc import ABCMeta, abstractmethod
 
-REStats = namedtuple('REStats', 'accepted')
+REStats = namedtuple('REStats', 'accepted works')
 
 
 class ExchangeMaster(object):
@@ -34,10 +34,16 @@ class ExchangeMaster(object):
         self._comm.send(Parcel(self.name, r1, request), dest=r1)
 
     def _perform_exchanges(self, swap_list):
-
-        ## TODO: refactor this into smaller functions
         
-        works = [[0.0, 0.0]] * len(swap_list)
+        self._trigger_proposal_calculation(swap_list)
+        works = self._receive_works(swap_list)
+        acc = self._calculate_acceptance(works)
+        self._trigger_exchanges(swap_list, acc)
+
+        return zip(acc, works)
+
+    def _trigger_proposal_calculation(self, swap_list):
+
         for i, (r1, r2, params) in enumerate(swap_list):
             self._comm.send(Parcel(self.name, r2, SendGetStateAndEnergyRequest(self.name, r1)), r2)
             self._comm.send(Parcel(self.name, r1, SendGetStateAndEnergyRequest(self.name, r2)), r1)
@@ -49,14 +55,24 @@ class ExchangeMaster(object):
 
             self._send_propose_request(r1, r2, params)
             self._send_propose_request(r2, r1, params)
+        
+    def _receive_works(self, swap_list):
 
+        works = [[0.0, 0.0]] * len(swap_list)
         for i, (r1, r2, params) in enumerate(swap_list):
             works[i][0] = self._comm.recv(source=r1).data
             works[i][1] = self._comm.recv(source=r2).data
 
+        return works
+
+    def _calculate_acceptance(self, works):
+
         import numpy
-        acc = numpy.exp(-numpy.sum(works,1)) > numpy.random.uniform(size=len(works))
         
+        return numpy.exp(-numpy.sum(works,1)) > numpy.random.uniform(size=len(works))
+
+    def _trigger_exchanges(self, swap_list, acc):
+
         for i, (r1, r2, params) in enumerate(swap_list):
             oui = acc[i]
             
@@ -71,8 +87,11 @@ class ExchangeMaster(object):
                 parcel = Parcel(self.name, r2, AcceptBufferedProposalRequest(self.name, False))
                 self._comm.send(parcel, r2)
 
-        return acc
-            
+    def _update_swap_stats(self, swap_list, results, step):
+
+        for j, (r1, r2, _) in enumerate(swap_list):
+            self.swap_statistics.update(step, {r1+'_'+r2: REStats(*results[j])})
+                
     def _calculate_swap_list(self, i):
 
         return self._swap_list_generator.generate_swap_list(step=i)
@@ -87,21 +106,20 @@ class ExchangeMaster(object):
     def run(self, n_iterations, swap_interval=5, status_interval=100, samples_folder=None, 
             dump_interval=250, dump_step=5):
 
-        for i in xrange(n_iterations):
-            if i % swap_interval == 0 and i > 0:
-                swap_list = self._calculate_swap_list(i)
+        for step in xrange(n_iterations):
+            if step % swap_interval == 0 and step > 0:
+                swap_list = self._calculate_swap_list(step)
                 results = self._perform_exchanges(swap_list)
-                for j, (r1, r2, _) in enumerate(swap_list):
-                    self.swap_statistics.update(i, {r1+'_'+r2: REStats(results[j])})
+                self._update_swap_stats(swap_list, results, step)
                 no_ex_replicas = self._get_no_ex_replicas(swap_list)
                 self._send_sample_requests(no_ex_replicas)
                 self.sampling_statistics.update(self.step, no_ex_replicas)
             else:
                 self._send_sample_requests(self.replica_names)
-                self.sampling_statistics.update(self.step, self.replica_names)
+                self.sampling_statistics.update(step, self.replica_names)
                 
-            if i % dump_interval == 0 and i > 0:
-                self._send_dump_samples_request(samples_folder, i - dump_interval, i, dump_step)
+            if step % dump_interval == 0 and step > 0:
+                self._send_dump_samples_request(samples_folder, step - dump_interval, step, dump_step)
 
             self.step += 1
 
@@ -122,6 +140,7 @@ class ExchangeMaster(object):
         for r in self.replica_names:
             parcel = Parcel(self.name, r, DieRequest(self.name))
             self._comm.send(parcel, dest=r)
+
 
 class StandardReplicaExchangeMaster(ExchangeMaster):
 
