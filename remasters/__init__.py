@@ -15,14 +15,20 @@ REStats = namedtuple('REStats', 'accepted works')
 
 class ExchangeMaster(object):
 
-    def __init__(self, name, replica_names, swap_list_generator, sampling_statistics, swap_statistics, comm):
+    def __init__(self, name, replica_names, swap_params, 
+                 sampling_statistics, swap_statistics, 
+                 comm, swap_list_generator=None):
 
         self.name = name
         self.replica_names = replica_names
         self._n_replicas = len(self.replica_names)
+        self._swap_params = swap_params
         self.sampling_statistics = sampling_statistics
         self.swap_statistics = swap_statistics
         self._comm = comm
+        if swap_list_generator is None:
+            from rexfw.slgenerators import StandardSwapListGenerator
+            swap_list_generator = StandardSwapListGenerator(self._n_replicas, self._swap_params)
         self._swap_list_generator = swap_list_generator
         self.step = 0
 
@@ -54,7 +60,11 @@ class ExchangeMaster(object):
             self._comm.recv(source=r2)
 
             self._send_propose_request(r1, r2, params)
+            # print params.proposer_params.pdf_params
+            params.proposer_params.reverse()
+            # print params.proposer_params.pdf_params
             self._send_propose_request(r2, r1, params)
+            params.proposer_params.reverse()
         
     def _receive_works(self, swap_list):
 
@@ -140,15 +150,3 @@ class ExchangeMaster(object):
         for r in self.replica_names:
             parcel = Parcel(self.name, r, DieRequest(self.name))
             self._comm.send(parcel, dest=r)
-
-
-class StandardReplicaExchangeMaster(ExchangeMaster):
-
-    def __init__(self, name, replica_names, sampling_statistics, swap_statistics, comm):
-
-        from rexfw.slgenerators import REStandardSwapListGenerator
-        
-        swap_list_generator = REStandardSwapListGenerator(len(replica_names))
-
-        super(StandardReplicaExchangeMaster, self).__init__(name, replica_names, swap_list_generator,
-                                                            sampling_statistics, swap_statistics, comm)

@@ -121,7 +121,7 @@ class Replica(object):
         params = request.params
         proposer_params = params.proposer_params
         self._current_master = request.sender
-        
+
         proposer = list(set(self.proposers.keys()).intersection(set(params.proposers)))[-1]
         proposal = self.proposers[proposer].propose(self, 
                                                     self._buffered_partner_state,
