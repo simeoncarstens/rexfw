@@ -61,6 +61,8 @@ class ExchangeMaster(object):
             
             self._send_propose_request(r1, r2, params)
             params.proposer_params.reverse()
+            # import time
+            # time.sleep(1)
             self._send_propose_request(r2, r1, params)
             params.proposer_params.reverse()
         

@@ -174,12 +174,18 @@ class HMCStepRENSProposer(AbstractRENSProposer):
         FakeParams = namedtuple('FakeParams', fields)
 
         prot = lambda t, tau: t / tau
-        t_prot = lambda t: prot(t, params.timestep * params.n_steps)
         fake_timestep = params.timestep
         n_steps = params.n_steps
-        interp_pdf = InterpolatingPDF(pdf, params)
-        im_log_probs = [lambda x, i=i: interp_pdf.log_prob(x, fake_timestep * i) 
+        t_prot = lambda t: prot(t, n_steps)
+
+        Bla = namedtuple('Bla', 'n_steps timestep pdf_params')
+        p = Bla(n_steps, 1.0, params.pdf_params)
+        
+        interp_pdf = InterpolatingPDF(pdf, p)
+        
+        im_log_probs = [lambda x, i=i: interp_pdf.log_prob(x, i) 
                         for i in range(n_steps + 1)]
+
         im_reduced_hamiltonians = [noneqprops.ReducedHamiltonian(im_log_probs[i],
                                                                  temperature=1.0) 
                                    for i in range(n_steps + 1)]
@@ -196,7 +202,7 @@ class HMCStepRENSProposer(AbstractRENSProposer):
                                  mass_matrix=None,
                                  integrator=FastLeapFrog)
 
-        im_sys_infos = self._add_gradients(im_sys_infos, fake_params, t_prot)
+        im_sys_infos = self._add_gradients(im_sys_infos, fake_params, t_prot)#, grads)
         propagations = self._setup_propagations(im_sys_infos, fake_params)
         
         steps = [Step(perturbations[i], propagations[i]) for i in range(n_steps)]
@@ -210,7 +216,7 @@ class HMCStepRENSProposer(AbstractRENSProposer):
     def _add_gradients(self, *params):
         
         return HMCStepRENS._add_gradients(*params)
-        
+    
     def _propagator_factory(self, pdf, params):
 
         protocol = self._setup_protocol(pdf, params)

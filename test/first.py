@@ -17,9 +17,10 @@ comm = MPICommunicator()
 replica_names = ['replica{}'.format(i) for i in range(1, size)]
 proposer_names = ['prop{}'.format(i) for i in range(1, size)]
 
-sigmas = 1.0 / numpy.sqrt(numpy.array([5,3,1]))
+sigmas = 1.0 / numpy.sqrt(numpy.array([7,5,3,1]))[2:]
+# sigmas = 1 / sigmas ** 2
 schedule = {'sigma': sigmas}
-timesteps = [0.3, 0.5]
+timesteps = [0.3, 0.5, 0.7][2:]
 
 if rank == 0:
 
@@ -27,9 +28,9 @@ if rank == 0:
     from rexfw.statistics import MCMCSamplingStatistics, REStatistics
     from rexfw.convenience.statistics import create_standard_averages
 
-    # params = create_standard_HMCStepRENS_params(schedule, 20, timesteps)
+    params = create_standard_HMCStepRENS_params(schedule, 15, timesteps)
     # params = create_standard_RE_params(n_replicas)
-    params = create_standard_LMDRENS_params(schedule, 15, timesteps, 1.0)
+    # params = create_standard_LMDRENS_params(schedule, 15, timesteps, 1.0)
 
     
     local_pacc_avgs, re_pacc_avgs = create_standard_averages(replica_names)
@@ -38,7 +39,7 @@ if rank == 0:
     master = ExchangeMaster('master0', replica_names, params, comm=comm, 
                             sampling_statistics=stats, swap_statistics=re_stats)
 
-    master.run(5000, swap_interval=5, status_interval=1000, dump_interval=100000, 
+    master.run(15000, swap_interval=5, status_interval=1000, dump_interval=100000, 
                samples_folder='/baycells/scratch/carstens/test/', dump_step=1)
     master.terminate_replicas()
 
@@ -75,9 +76,9 @@ else:
 
     # proposer = MDRENSProposer(proposer_names[rank-1], comm)
     
-    proposer = LMDRENSProposer(proposer_names[rank-1], comm)
+    # proposer = LMDRENSProposer(proposer_names[rank-1], comm)
 
-    # proposer = HMCStepRENSProposer(proposer_names[rank-1], comm)
+    proposer = HMCStepRENSProposer(proposer_names[rank-1], comm)
 
     proposers = {proposer.name: proposer}
 
