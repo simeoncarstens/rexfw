@@ -58,11 +58,9 @@ class ExchangeMaster(object):
             ## this is to sync everything and really hacky
             self._comm.recv(source=r1)
             self._comm.recv(source=r2)
-
+            
             self._send_propose_request(r1, r2, params)
-            # print params.proposer_params.pdf_params
             params.proposer_params.reverse()
-            # print params.proposer_params.pdf_params
             self._send_propose_request(r2, r1, params)
             params.proposer_params.reverse()
         
@@ -72,7 +70,7 @@ class ExchangeMaster(object):
         for i, (r1, r2, params) in enumerate(swap_list):
             works[i][0] = self._comm.recv(source=r1).data
             works[i][1] = self._comm.recv(source=r2).data
-
+            
         return works
 
     def _calculate_acceptance(self, works):
@@ -117,7 +115,7 @@ class ExchangeMaster(object):
             dump_interval=250, dump_step=5):
 
         for step in xrange(n_iterations):
-            if step % swap_interval == 0 and step > 0:
+            if step % swap_interval == 0:# and step > 0:
                 swap_list = self._calculate_swap_list(step)
                 results = self._perform_exchanges(swap_list)
                 self._update_swap_stats(swap_list, results, step)

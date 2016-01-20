@@ -56,24 +56,37 @@ class InterpolatingPDF(object):
 
     def log_prob(self, x, t):
 
+        old_values = {}
         for name, value in self.interp_params(t).iteritems():
+            old_values.update(**{name: self.pdf[name]})
             self.pdf[name] = value
 
-        return self.pdf.log_prob(x)
+        res = self.pdf.log_prob(x)
+
+        for name, value in old_values.iteritems():
+            self.pdf[name] = value
+            
+        return res
 
     def gradient(self, x, t):
-    # def gradient(self, *params):
 
+        old_values = {}
         for name, value in self.interp_params(t).iteritems():
+            old_values.update(**{name: self.pdf[name]})
             self.pdf[name] = value
 
-        return self.pdf.gradient(x)
+        res = self.pdf.gradient(x)
+
+        for name, value in old_values.iteritems():
+            self.pdf[name] = value
+            
+        return res
         
     
 class AbstractRENSProposer(AbstractProposer):
 
     def propose(self, local_replica, partner_state, partner_energy, params):
-
+        
         n_steps = params.n_steps
         timestep = params.timestep
         pdf = InterpolatingPDF(local_replica.pdf, params)
@@ -83,10 +96,35 @@ class AbstractRENSProposer(AbstractProposer):
         import numpy
         ps_pos = partner_state.position
         traj = propagator.generate(State(ps_pos, numpy.random.normal(size=ps_pos.shape)), n_steps)
+
+        ## HACK
+        E = lambda x, t: -pdf.log_prob(x, t)
+        local_params = {k: local_replica.pdf[k] for k in params.pdf_params.keys()}
+        other_params = {k: filter(lambda x: x not in local_params.values(), params.pdf_params[k])[0] for k in params.pdf_params.keys()}
+
+        for p, v in other_params.iteritems():
+            local_replica.pdf[p] = v
+        E_remote = -local_replica.pdf.log_prob(traj.initial.position)
+        for p, v in local_params.iteritems():
+            local_replica.pdf[p] = v
+        E_local = -local_replica.pdf.log_prob(traj.final.position)        
+        
+        dE_kin = 0.5 * (numpy.sum(traj.final.momentum ** 2) - numpy.sum(traj.initial.momentum ** 2))
+        traj.work = E_local - E_remote + dE_kin 
+
         traj = GeneralTrajectory([traj.initial, traj.final], work=traj.work, heat=traj.heat)
 
         return traj
-        
+
+    
+class MDRENSProposer(AbstractRENSProposer):
+
+    def _propagator_factory(self, pdf, params):
+
+        from csb.statistics.samplers.mc.propagators import MDPropagator
+
+        return MDPropagator(pdf.gradient, params.timestep)
+    
     
 class LMDRENSProposer(AbstractRENSProposer):
 
@@ -97,19 +135,16 @@ class LMDRENSProposer(AbstractRENSProposer):
         return LangevinPropagator(pdf.gradient, params.timestep, params.gamma)
 
     def propose(self, local_replica, partner_state, partner_energy, params):
-        '''
-        TODO: This is ugly
-        '''
-        
-        traj = super(LMDRENSProposer, self).propose(local_replica, partner_state, partner_energy, params)
-        for p in params.pdf_params:
-            local_replica.pdf[p] = params.pdf_params[p][-1]
-        E_remote = local_replica.get_energy(traj[0])
-        for p in params.pdf_params:
-            local_replica.pdf[p] = params.pdf_params[p][0]
-        E_local = local_replica.get_energy(traj[-1])
-        traj.work = (E_local - E_remote) - traj.heat
 
+        import numpy
+
+        traj = super(LMDRENSProposer, self).propose(local_replica, partner_state, partner_energy, params)
+
+        E_remote = partner_energy
+        E_local = -local_replica.pdf.log_prob(traj[-1].position)
+
+        traj.work = (E_local - E_remote) + 0.5 * numpy.sum(traj[-1].momentum ** 2) - 0.5 * numpy.sum(traj[0].momentum ** 2) - traj.heat
+        
         return traj
 
 
