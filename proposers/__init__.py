@@ -2,7 +2,11 @@
 Proposer classes which propose states for RE, RENS, ... swaps
 '''
 
+import numpy
+
 from abc import ABCMeta, abstractmethod
+
+from csb.statistics.samplers import State
 
 from rexfw import Parcel
 
@@ -81,7 +85,7 @@ class InterpolatingPDF(object):
             self.pdf[name] = value
             
         return res
-        
+
     
 class AbstractRENSProposer(AbstractProposer):
 
@@ -91,27 +95,15 @@ class AbstractRENSProposer(AbstractProposer):
         timestep = params.timestep
         pdf = InterpolatingPDF(local_replica.pdf, params)
         propagator = self._propagator_factory(pdf, params)
-
-        from csb.statistics.samplers import State
-        import numpy
+        
         ps_pos = partner_state.position
         traj = propagator.generate(State(ps_pos, numpy.random.normal(size=ps_pos.shape)), n_steps)
-
-        ## HACK
-        E = lambda x, t: -pdf.log_prob(x, t)
-        local_params = {k: local_replica.pdf[k] for k in params.pdf_params.keys()}
-        other_params = {k: filter(lambda x: x not in local_params.values(), params.pdf_params[k])[0] for k in params.pdf_params.keys()}
-
-        for p, v in other_params.iteritems():
-            local_replica.pdf[p] = v
-        E_remote = -local_replica.pdf.log_prob(traj.initial.position)
-        for p, v in local_params.iteritems():
-            local_replica.pdf[p] = v
-        E_local = -local_replica.pdf.log_prob(traj.final.position)        
         
-        dE_kin = 0.5 * (numpy.sum(traj.final.momentum ** 2) - numpy.sum(traj.initial.momentum ** 2))
-        traj.work = E_local - E_remote + dE_kin 
-
+        E_remote = partner_energy
+        E_local = -local_replica.pdf.log_prob(traj.final.position)
+        
+        traj.work = (E_local - E_remote) + 0.5 * numpy.sum(traj.final.momentum ** 2) - 0.5 * numpy.sum(traj.initial.momentum ** 2) - traj.heat
+        
         traj = GeneralTrajectory([traj.initial, traj.final], work=traj.work, heat=traj.heat)
 
         return traj
@@ -134,19 +126,6 @@ class LMDRENSProposer(AbstractRENSProposer):
 
         return LangevinPropagator(pdf.gradient, params.timestep, params.gamma)
 
-    def propose(self, local_replica, partner_state, partner_energy, params):
-
-        import numpy
-
-        traj = super(LMDRENSProposer, self).propose(local_replica, partner_state, partner_energy, params)
-
-        E_remote = partner_energy
-        E_local = -local_replica.pdf.log_prob(traj[-1].position)
-
-        traj.work = (E_local - E_remote) + 0.5 * numpy.sum(traj[-1].momentum ** 2) - 0.5 * numpy.sum(traj[0].momentum ** 2) - traj.heat
-        
-        return traj
-
 
 class AMDRENSProposer(AbstractRENSProposer):
 
@@ -154,8 +133,9 @@ class AMDRENSProposer(AbstractRENSProposer):
 
         from csb.statistics.samplers.mc.propagators import ThermostattedMDPropagator
 
-        return ThermostattedMDPropagator(pdf.gradient, params.timestep, params.collision_probability,
-                                         params.update_interval)
+        return ThermostattedMDPropagator(pdf.gradient, params.timestep, 
+                                         collision_probability=params.collision_probability,
+                                         update_interval=params.update_interval)
 
 
 from csb.statistics.samplers.mc.multichain import HMCStepRENS
@@ -228,8 +208,6 @@ class HMCStepRENSProposer(AbstractRENSProposer):
         n_steps = params.n_steps
         propagator = self._propagator_factory(local_replica.pdf, params)
 
-        from csb.statistics.samplers import State
-        import numpy
         ps_pos = partner_state.position
         traj = propagator.generate(State(ps_pos, numpy.random.normal(size=ps_pos.shape)))
         traj = GeneralTrajectory([traj.initial, traj.final], work=traj.work)

@@ -2,6 +2,8 @@
 Master classes implementing exchange criteria for RE and derived algorithms
 '''
 
+import numpy
+
 from rexfw import Parcel
 from rexfw.remasters.requests import SampleRequest, DieRequest, ProposeRequest, AcceptBufferedProposalRequest
 from rexfw.remasters.requests import GetStateAndEnergyRequest_master, SendGetStateAndEnergyRequest
@@ -61,23 +63,19 @@ class ExchangeMaster(object):
             
             self._send_propose_request(r1, r2, params)
             params.proposer_params.reverse()
-            # import time
-            # time.sleep(1)
             self._send_propose_request(r2, r1, params)
             params.proposer_params.reverse()
-        
+            
     def _receive_works(self, swap_list):
 
-        works = [[0.0, 0.0]] * len(swap_list)
+        works = numpy.zeros((len(swap_list), 2))
         for i, (r1, r2, params) in enumerate(swap_list):
             works[i][0] = self._comm.recv(source=r1).data
             works[i][1] = self._comm.recv(source=r2).data
-            
+
         return works
 
     def _calculate_acceptance(self, works):
-
-        import numpy
         
         return numpy.exp(-numpy.sum(works,1)) > numpy.random.uniform(size=len(works))
 
@@ -117,7 +115,7 @@ class ExchangeMaster(object):
             dump_interval=250, dump_step=5):
 
         for step in xrange(n_iterations):
-            if step % swap_interval == 0:# and step > 0:
+            if step % swap_interval == 0 and step > 0:
                 swap_list = self._calculate_swap_list(step)
                 results = self._perform_exchanges(swap_list)
                 self._update_swap_stats(swap_list, results, step)

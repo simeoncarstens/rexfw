@@ -4,7 +4,7 @@ import numpy, os, sys
 from mpi4py import MPI
 
 from rexfw.communicators.mpi import MPICommunicator
-from rexfw.convenience import create_standard_HMCStepRENS_params, create_standard_LMDRENS_params, create_standard_RE_params
+from rexfw.convenience import create_standard_HMCStepRENS_params, create_standard_LMDRENS_params, create_standard_RE_params, create_standard_AMDRENS_params
 
 mpicomm = MPI.COMM_WORLD
 rank = mpicomm.Get_rank()
@@ -17,10 +17,10 @@ comm = MPICommunicator()
 replica_names = ['replica{}'.format(i) for i in range(1, size)]
 proposer_names = ['prop{}'.format(i) for i in range(1, size)]
 
-sigmas = 1.0 / numpy.sqrt(numpy.array([7,5,3,1]))[2:]
+sigmas = 1.0 / numpy.sqrt(numpy.array([7,5,3,1]))
 # sigmas = 1 / sigmas ** 2
 schedule = {'sigma': sigmas}
-timesteps = [0.3, 0.5, 0.7][2:]
+timesteps = [0.3, 0.5, 0.7]
 
 if rank == 0:
 
@@ -31,7 +31,7 @@ if rank == 0:
     params = create_standard_HMCStepRENS_params(schedule, 15, timesteps)
     # params = create_standard_RE_params(n_replicas)
     # params = create_standard_LMDRENS_params(schedule, 15, timesteps, 1.0)
-
+    # params = create_standard_AMDRENS_params(schedule, 15, timesteps)
     
     local_pacc_avgs, re_pacc_avgs = create_standard_averages(replica_names)
     stats = MCMCSamplingStatistics(comm, averages=local_pacc_avgs)
@@ -68,7 +68,7 @@ else:
     from rexfw.slaves import Slave
     from rexfw.samplers.rwmc import CompatibleRWMCSampler
     from rexfw.samplers.hmc import CompatibleHMCSampler
-    from rexfw.proposers import REProposer, LMDRENSProposer, HMCStepRENSProposer, MDRENSProposer
+    from rexfw.proposers import REProposer, LMDRENSProposer, HMCStepRENSProposer, AMDRENSProposer
 
     from rexfw.test.pdfs import MyNormal
     
@@ -80,13 +80,15 @@ else:
 
     proposer = HMCStepRENSProposer(proposer_names[rank-1], comm)
 
+    # proposer = AMDRENSProposer(proposer_names[rank-1], comm)
+
     proposers = {proposer.name: proposer}
 
     hmc_timesteps = [0.6, 0.6, 0.6]
     hmc_trajectory_length = 20
 
     pdf = MyNormal(sigma=sigmas[rank-1])
-    replica = Replica(replica_names[rank-1], State(numpy.array([float(rank)])), 
+    replica = Replica(replica_names[rank-1], State(numpy.array([2.0 + 0*float(rank)])), 
                       pdf, {}, CompatibleRWMCSampler,
                       {'stepsize': 0.7},
                        proposers, comm)
