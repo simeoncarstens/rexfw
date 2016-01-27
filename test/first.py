@@ -25,39 +25,42 @@ timesteps = [0.3, 0.5, 0.7]
 if rank == 0:
 
     from rexfw.remasters import ExchangeMaster
-    from rexfw.statistics import MCMCSamplingStatistics, REStatistics
+    from rexfw.statistics import MCMCSamplingStatistics, Statistics
+    from rexfw.statistics.writers import ConsoleStatisticsWriter, SimpleConsoleMCMCStatisticsWriter, SimpleConsoleREStatisticsWriter
     from rexfw.convenience.statistics import create_standard_averages
 
-    params = create_standard_HMCStepRENS_params(schedule, 15, timesteps)
-    # params = create_standard_RE_params(n_replicas)
+    # params = create_standard_HMCStepRENS_params(schedule, 15, timesteps)
+    params = create_standard_RE_params(n_replicas)
     # params = create_standard_LMDRENS_params(schedule, 15, timesteps, 1.0)
     # params = create_standard_AMDRENS_params(schedule, 15, timesteps)
     
     local_pacc_avgs, re_pacc_avgs = create_standard_averages(replica_names)
-    stats = MCMCSamplingStatistics(comm, averages=local_pacc_avgs)
-    re_stats = REStatistics(averages=re_pacc_avgs)
+    stats = MCMCSamplingStatistics(comm, averages=local_pacc_avgs)# ,
+                                   # stats_writer=SimpleConsoleMCMCStatisticsWriter())
+    re_stats = Statistics(name='REStatistics', averages=re_pacc_avgs,
+                          stats_writer=SimpleConsoleREStatisticsWriter(['re_p_acc']))
     master = ExchangeMaster('master0', replica_names, params, comm=comm, 
                             sampling_statistics=stats, swap_statistics=re_stats)
 
-    master.run(15000, swap_interval=5, status_interval=1000, dump_interval=100000, 
+    master.run(5000, swap_interval=5, status_interval=100, dump_interval=100000, 
                samples_folder='/baycells/scratch/carstens/test/', dump_step=1)
     master.terminate_replicas()
 
-    print "MC p_acc:", 
-    for x in range(1, size):
-        p = master.sampling_statistics.averages['sampler_replica{}'.format(x)]['p_acc'].value
-        print "{:.2f}".format(p), 
-    print
+    # print "MC p_acc:", 
+    # for x in range(1, size):
+    #     p = master.sampling_statistics.averages['sampler_replica{}'.format(x)]['p_acc'].value
+    #     print "{:.2f}".format(p), 
+    # print
 
-    print "RE(NS) p_acc:",
-    for x in range(1, size - 1):
-        pass
+    # print "RE(NS) p_acc:",
+    # for x in range(1, size - 1):
+    #     pass
 
-        p = master.swap_statistics.averages['replica{}_replica{}'.format(x, x+1)]['p_acc'].value
-        print "{:.2f}".format(p), 
+    #     p = master.swap_statistics.averages['replica{}_replica{}'.format(x, x+1)]['p_acc'].value
+    #     print "{:.2f}".format(p), 
 
     from cPickle import dump
-    dump(master.swap_statistics.elements, open('/tmp/stats.pickle','w'))
+    dump((master.swap_statistics.elements, master.swap_statistics.averages), open('/tmp/stats.pickle','w'))
 
 else:
 
@@ -72,13 +75,13 @@ else:
 
     from rexfw.test.pdfs import MyNormal
     
-    # proposer = REProposer('prop{}'.format(rank), comm)
+    proposer = REProposer('prop{}'.format(rank), comm)
 
     # proposer = MDRENSProposer(proposer_names[rank-1], comm)
     
     # proposer = LMDRENSProposer(proposer_names[rank-1], comm)
 
-    proposer = HMCStepRENSProposer(proposer_names[rank-1], comm)
+    # proposer = HMCStepRENSProposer(proposer_names[rank-1], comm)
 
     # proposer = AMDRENSProposer(proposer_names[rank-1], comm)
 

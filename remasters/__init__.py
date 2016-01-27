@@ -53,13 +53,15 @@ class ExchangeMaster(object):
     def _trigger_proposal_calculation(self, swap_list):
 
         for i, (r1, r2, params) in enumerate(swap_list):
+            from time import sleep
             self._comm.send(Parcel(self.name, r2, SendGetStateAndEnergyRequest(self.name, r1)), r2)
+            ## Receives a None from r1 and r2; sent once buffered state / energies have been set
+            ## this is to sync everything and really hacky
+            self._comm.recv(source=r2)
             self._comm.send(Parcel(self.name, r1, SendGetStateAndEnergyRequest(self.name, r2)), r1)
-
             ## Receives a None from r1 and r2; sent once buffered state / energies have been set
             ## this is to sync everything and really hacky
             self._comm.recv(source=r1)
-            self._comm.recv(source=r2)
             
             self._send_propose_request(r1, r2, params)
             params.proposer_params.reverse()
@@ -76,8 +78,9 @@ class ExchangeMaster(object):
         return works
 
     def _calculate_acceptance(self, works):
-        
-        return numpy.exp(-numpy.sum(works,1)) > numpy.random.uniform(size=len(works))
+
+        from csb.numeric import exp
+        return exp(-numpy.sum(works,1)) > numpy.random.uniform(size=len(works))
 
     def _trigger_exchanges(self, swap_list, acc):
 
@@ -94,11 +97,16 @@ class ExchangeMaster(object):
                 self._comm.send(parcel, r1)
                 parcel = Parcel(self.name, r2, AcceptBufferedProposalRequest(self.name, False))
                 self._comm.send(parcel, r2)
+            self._comm.recv(r1)
+            self._comm.recv(r2)
 
     def _update_swap_stats(self, swap_list, results, step):
 
+        from rexfw.statistics import REMoveAccepted, REWorks
         for j, (r1, r2, _) in enumerate(swap_list):
-            self.swap_statistics.update(step, {r1+'_'+r2: REStats(*results[j])})
+            # self.swap_statistics.update(step, {r1+'_'+r2: REStats(*results[j])})
+            self.swap_statistics.update(step, REMoveAccepted(results[j][0], r1, r2))
+            self.swap_statistics.update(step, REWorks(results[j][1], r1, r2))
                 
     def _calculate_swap_list(self, i):
 
@@ -109,12 +117,17 @@ class ExchangeMaster(object):
         ex_replicas = [[x[0], x[1]] for x in swap_list]
         ex_replicas = [x for z in ex_replicas for x in z]
 
-        return list(set(ex_replicas).difference(self.replica_names))
-
+        return [r for r in self.replica_names if not r in ex_replicas]
+        
     def run(self, n_iterations, swap_interval=5, status_interval=100, samples_folder=None, 
             dump_interval=250, dump_step=5):
 
+        import os
+        os.system('mkdir '+samples_folder)
+        os.system('mkdir '+samples_folder+'statistics/')
+        
         for step in xrange(n_iterations):
+            print step
             if step % swap_interval == 0 and step > 0:
                 swap_list = self._calculate_swap_list(step)
                 results = self._perform_exchanges(swap_list)
@@ -128,6 +141,16 @@ class ExchangeMaster(object):
                 
             if step % dump_interval == 0 and step > 0:
                 self._send_dump_samples_request(samples_folder, step - dump_interval, step, dump_step)
+
+            if step % status_interval == 0 and step > 0:
+                self.sampling_statistics.write_averages(step)
+                self.swap_statistics.write_averages(step)
+                ## HACK (obviously)
+                from cPickle import dump
+                dump((self.sampling_statistics._elements, self.sampling_statistics._averages), 
+                     open(samples_folder+'statistics/sampling_stats.pickle','w'))
+                dump((self.swap_statistics._elements, self.swap_statistics._averages), 
+                     open(samples_folder+'statistics/swap_stats.pickle','w'))
 
             self.step += 1
 

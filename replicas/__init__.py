@@ -17,6 +17,7 @@ class Replica(object):
         self.name = name
         self.samples = []
         self._sampler = None
+        self._state = None
         
         self.state = state
         self.pdf = pdf
@@ -54,11 +55,16 @@ class Replica(object):
             StoreStateEnergyRequest='self._store_state_energy({})',
             GetStateAndEnergyRequest='self._send_state_and_energy({})',
             DumpSamplesRequest='self._dump_samples({})',
+            DoNothingRequest='self._do_nothing({})',
             DieRequest='-1')
+
+    def _do_nothing(self, request):
+        pass
         
     def _setup_sampler(self):
 
-        self._sampler = self.sampler_class(self.pdf, self.state, 
+        from copy import deepcopy
+        self._sampler = self.sampler_class(self.pdf, deepcopy(self.state), 
                                            **self.sampler_params)
 
     def _setup_pdf(self):
@@ -66,21 +72,21 @@ class Replica(object):
 
     @property
     def state(self):
-        return self.samples[-1]
+        return self._state
     @state.setter
     def state(self, value):
-        self.samples.append(value)
+        self._state = value
         if not self._sampler is None:
             self._sampler._state = value
 
     def _send_state_and_energy(self, request):
 
-        self._current_master = request.sender
         request = StoreStateEnergyRequest(request.sender, self.state, self.energy)
         self._comm.send(Parcel(self.name, request.sender, request), request.sender)
 
     def _send_get_state_and_energy_request(self, request):
 
+        self._current_master = request.sender
         self._comm.send(Parcel(self.name, request.partner, GetStateAndEnergyRequest(self.name)), 
                         request.partner)    
 
@@ -88,13 +94,17 @@ class Replica(object):
 
         self._buffered_partner_state = request.state
         self._buffered_partner_energy = request.energy
-        self._comm.send(self._current_master, dest='master0')
+        from rexfw.replicas.requests import DoNothingRequest
+        parcel = Parcel(self.name, self._current_master, DoNothingRequest(self.name))
+        self._comm.send(parcel, dest=self._current_master)
     
     def _sample(self, request):
+
         from copy import deepcopy
         res = deepcopy(self._sampler.sample())
         self.state = res
-
+        self.samples.append(deepcopy(res))
+        
     def _send_stats(self, request):
 
         parcel = Parcel(self.name, request.sender, self._sampler.get_last_draw_stats())
@@ -127,7 +137,6 @@ class Replica(object):
                                                     self._buffered_partner_state,
                                                     self._buffered_partner_energy,
                                                     proposer_params)
-        # print "sending work:", proposal.work
         self._comm.send(Parcel(self.name, self._current_master, float(proposal.work)), self._current_master)
         self._buffered_proposal = proposal[-1]
 
@@ -138,6 +147,8 @@ class Replica(object):
         if request.accept:
             self.state = self._buffered_proposal
         self.samples.append(deepcopy(self.state))
+        from rexfw.replicas.requests import DoNothingRequest
+        self._comm.send(Parcel(self.name, self._current_master, DoNothingRequest(self.name)), self._current_master)
         
     def _send_energy(self, request):
 

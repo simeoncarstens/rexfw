@@ -33,12 +33,12 @@ rens_timesteps = [0.3, 0.5, 0.7]
 # rens_gradients = [lambda q, l, i=i: l * pdfs[i+1].gradient(q) + (1.0 - l) * pdfs[i].gradient(q) 
 #                           for i in range(len(pdfs)-1)]
 
-from rexfw.proposers import InterpolatingPDF
+from rexfw.proposers import ParamInterpolationPDF
 from collections import namedtuple
 P = namedtuple('P', 'n_steps timestep pdf_params')
-ipdfs = [InterpolatingPDF(MyNormal(), 
-                          P(rens_trajectory_length, rens_timesteps[i], 
-                            {'sigma': (std_devs[i], std_devs[i+1])})) 
+ipdfs = [ParamInterpolationPDF(MyNormal(), 
+                               P(rens_trajectory_length, rens_timesteps[i], 
+                                 {'sigma': (std_devs[i], std_devs[i+1])})) 
          for i in range(len(pdfs) - 1)]
 rens_gradients = [lambda x, l, i=i: ipdfs[i].gradient(x, l*rens_timesteps[i]*rens_trajectory_length) 
                   for i, pdf in enumerate(ipdfs)]
@@ -60,7 +60,7 @@ params = [LTMDRENSSwapParameterInfo(samplers[i], samplers[i+1], rens_timesteps[i
 # Initialize thermostatted RENS algorithm:
 algorithm = LTMDRENS(samplers, params)
 
-# algorithm = ReplicaExchangeMC(samplers, params)
+algorithm = ReplicaExchangeMC(samplers, params)
 
 # Initialize swapping scheme:
 swapper = AlternatingAdjacentSwapScheme(algorithm)

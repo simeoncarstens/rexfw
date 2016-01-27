@@ -45,7 +45,7 @@ class REProposer(AbstractProposer):
         return GeneralTrajectory([partner_state, partner_state], work=work)
 
 
-class InterpolatingPDF(object):
+class ParamInterpolationPDF(object):
 
     def __init__(self, pdf, params):
 
@@ -86,14 +86,60 @@ class InterpolatingPDF(object):
             
         return res
 
+
+class OldISDInterpolatingPDF(object):
+    '''
+    Linear interpolation between two pdfs, p(x,t) = (1-l)*p(x; params0) + l*p(x; params1)
+    '''
+    
+    def __init__(self, pdf, params):
+
+        self.pdf = pdf
+        n_steps = params.n_steps
+        dt = params.timestep
+        pdf_params = params.pdf_params
+        self.l = lambda t: t / (n_steps * dt)
+        from protlib import LambdaISDWrapper
+        self._lambdaisdwrapper = LambdaISDWrapper((pdf_params['lammda'][0], pdf_params['q'][0]),
+                                                  (pdf_params['lammda'][-1], pdf_params['q'][-1]),
+                                                  self.pdf._isdwrapper.posterior)
+
+    def log_prob(self, x, t):
+
+        return self._lambdaisdwrapper.log_prob(x, self.l(t))
+    
+    def gradient(self, x, t):
+
+        return self._lambdaisdwrapper.gradient(x, self.l(t))    
+
+
+# if __name__ == '__main__':
+#     import os
+#     os.chdir('/baycells/home/carstens/projects/rens/py/sampling/')
+#     from pdfs import UBQISDPosterior
+#     pdf = UBQISDPosterior()
+#     from collections import namedtuple
+#     new = OldISDInterpolatingPDF(pdf, namedtuple('bla', 'n_steps timestep pdf_params')(100, 1.0, {'lammda': [1.0, 0.9], 'q': [1.0, 1.03]}))
+#     x = numpy.random.normal(size=370, scale=7)
+#     from protlib import LambdaISDWrapper
+#     old = LambdaISDWrapper((1.0, 1.0), (0.9, 1.03), pdf._isdwrapper.posterior)
+
+#     print old.log_prob(x, 1.0), new.log_prob(x, 1.0)
+    
     
 class AbstractRENSProposer(AbstractProposer):
 
+    def __init__(self, name, comm, interpolating_pdf=ParamInterpolationPDF):
+
+        super(AbstractRENSProposer, self).__init__(name, comm)
+
+        self._interpolating_pdf = interpolating_pdf
+        
     def propose(self, local_replica, partner_state, partner_energy, params):
         
         n_steps = params.n_steps
         timestep = params.timestep
-        pdf = InterpolatingPDF(local_replica.pdf, params)
+        pdf = self._interpolating_pdf(local_replica.pdf, params)
         propagator = self._propagator_factory(pdf, params)
         
         ps_pos = partner_state.position
@@ -161,7 +207,7 @@ class HMCStepRENSProposer(AbstractRENSProposer):
         Bla = namedtuple('Bla', 'n_steps timestep pdf_params')
         p = Bla(n_steps, 1.0, params.pdf_params)
         
-        interp_pdf = InterpolatingPDF(pdf, p)
+        interp_pdf = self._interpolating_pdf(pdf, p)
         
         im_log_probs = [lambda x, i=i: interp_pdf.log_prob(x, i) 
                         for i in range(n_steps + 1)]

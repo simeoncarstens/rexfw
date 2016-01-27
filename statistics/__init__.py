@@ -4,14 +4,102 @@ Statistics classes responsible for tracking sampling statistics
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
+from collections import defaultdict
+
 from rexfw import Parcel
 from rexfw.statistics.writers import ConsoleStatisticsWriter
 from rexfw.statistics.requests import SendStatsRequest
 
+class FilterableQuantityList(list):
 
+    def select(self, **kwargs):
+
+        criterion = lambda x: sum([x.__getattribute__(k) == v 
+                                   for k, v in kwargs.iteritems() if hasattr(x, k)]) == len(kwargs)
+        # criterion = lambda x: sum([x.__dict__[k]==v for k,v in kwargs.items() if k in x.__dict__]) == len(kwargs)
+
+        # return self
+        
+        return self.__class__((filter(criterion, self)))
+    
+
+class LoggedQuantity(object):
+
+    def __init__(self, name, value):
+
+        self.step = None
+        self._name = name
+        self._value = value
+        self.origins = set()
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        self._value = value
+
+
+class SamplerStepsize(LoggedQuantity):
+
+    def __init__(self, value, sampler_name):
+
+        super(SamplerStepsize, self).__init__('stepsize', value)
+        self.origins.add(sampler_name)
+
+    def __repr__(self):
+
+        return 'stepsize {}: {}'.format(list(self.origins)[0], self.value)
+        
+
+class MCMCMoveAccepted(LoggedQuantity):
+
+    def __init__(self, value, sampler_name):
+
+        super(MCMCMoveAccepted, self).__init__('mcmc_accepted', value)
+        self.origins.add(sampler_name)
+
+    def __repr__(self):
+
+        return 'accepted {}: {}'.format(list(self.origins)[0], self.value)
+
+
+class REMoveAccepted(LoggedQuantity):
+
+    def __init__(self, value, replica1, replica2):
+
+        super(REMoveAccepted, self).__init__('re_accepted', value)
+        self.origins.add(replica1)
+        self.origins.add(replica2)
+    
+    def __repr__(self):
+
+        return 'accepted {} <> {}: {}'.format(sorted(list(self.origins))[0], sorted(list(self.origins))[1], 
+                                              self.value)
+
+class REWorks(LoggedQuantity):
+
+    def __init__(self, value, replica1, replica2):
+
+        super(REWorks, self).__init__('works', value)
+        self.origins.add(replica1)
+        self.origins.add(replica2)
+    
+    def __repr__(self):
+
+        return 'works {} <> {}: {}'.format(sorted(list(self.origins))[0], sorted(list(self.origins))[1], 
+                                           self.value)
+    
+    
 class Statistics(object):
 
-    _elements = []
+    _elements = defaultdict(FilterableQuantityList)
+    _averages = FilterableQuantityList()
 
     def __init__(self, name, averages=[], stats_writer=None):
 
@@ -27,22 +115,36 @@ class Statistics(object):
         
     def _init_averages(self, averages):
 
-        pass
-    
-    def update(self, step, element):
+        self._averages = FilterableQuantityList(averages)
+        
+    def update(self, step, quantity):
 
-        self._elements.append(element)
-        self._update_averages(step, element)
+        quantity.step=step
+        self._elements['step{}'.format(step)].append(quantity)
+        self._update_averages(step, quantity)
 
-    def _update_averages(self, step, info):
+    def _update_averages(self, step, quantity):
 
         for avg in self._averages:
-            if avg.field_name in info:
-                avg.update(step, info[avg.field_name])
+            if avg.is_relevant(quantity):
+                avg.update(quantity)
 
-    def write(self, elements=None, fields=None):
+    def write(self, step, elements=None):
 
-        self._stats_writer.write(self._elements[elements], fields)
+        self._stats_writer.write(step, self._elements[elements], fields)
+
+    def write_averages(self, step, which=None):
+
+        # self._stats_writer.write(step, [self.averages], which)
+
+        pass
+        # if names is None:
+        #     names = self._averages.keys()
+
+        # self._stats_writer.write(step, 
+        #                          [{k: v for k, v in self._averages.iteritems()
+        #                                 if k in names}],
+        #                          names)
 
     @property
     def averages(self):
@@ -53,34 +155,26 @@ class Statistics(object):
         return self._elements
 
 
-class MCMCSamplingStatistics(Statistics):
+class SRSamplingStatistics(Statistics):
 
-    _elements = []
+    def __init__(self, name, comm, averages={}, stats_writer=None):
 
-    def __init__(self, comm, name='MCMCStats0', averages={}, stats_writer=None):
-
-        super(MCMCSamplingStatistics, self).__init__(name, averages, stats_writer)
+        super(SRSamplingStatistics, self).__init__(name, averages, stats_writer)
 
         self._comm = comm
     
     def _init_averages(self, averages):
 
-        if averages is None:
-            
-            from rexfw.statistics.averages import AcceptanceRateAverage
-            
-            self._averages.update(**{'sampler{}'.format(i): {'p_acc': AcceptanceRateAverage()}
-                                     for i in xrange(1,self._n_replicas + 1)})
-        else:
-            self._averages.update(**averages)
+        self._averages = averages
 
     def update(self, step, senders):
 
-        element = self._get_sampling_stats(senders)
-        element.update(step=step)
-        self._elements.append(element)
-        self._update_averages(step, element)
-    
+        elements = self._get_sampling_stats(senders)
+        for sampler, stats in elements.iteritems():
+            quantities = self._create_quantities_from_sample_stats(sampler, stats)
+            for q in quantities:
+                super(SRSamplingStatistics, self).update(step, q)
+                        
     def _get_sampling_stats(self, replicas):
 
         results = {}
@@ -94,30 +188,15 @@ class MCMCSamplingStatistics(Statistics):
             results.update(**{'sampler_{}'.format(r): self._comm.recv(source=r).data})
 
         return results
-            
-    def _update_averages(self, step, info):
-
-        for key in info.iterkeys():
-            if key == 'step':
-                continue
-            sampler_stats = self._averages[key]
-            for avg in sampler_stats.iterkeys():
-                if set(sampler_stats[avg].required_field_names).issubset(set(info[key]._fields)):
-                    sampler_stats[avg].update(step, info[key])
 
 
-class REStatistics(Statistics):
+class MCMCSamplingStatistics(SRSamplingStatistics):
 
-    def __init__(self, name='REStats0', averages={}, stats_writer=None):
+    def __init__(self, comm, name='MCMCStats0', averages={}, stats_writer=None):
 
-        super(REStatistics, self).__init__(name, averages, stats_writer)
+        super(MCMCSamplingStatistics, self).__init__(name, comm, averages, stats_writer)
 
-    def _update_averages(self, step, info):
+    def _create_quantities_from_sample_stats(self, sampler, stats):
 
-        for key in info.iterkeys():
-            if key == 'step':
-                continue
-            ex_stats = self._averages[key]
-            for avg in ex_stats.iterkeys():
-                if set(ex_stats[avg].required_field_names).issubset(set(info[key]._fields)):
-                    ex_stats[avg].update(step, info[key])
+        return {MCMCMoveAccepted(stats.accepted, sampler), SamplerStepsize(stats.stepsize, sampler)}
+    
