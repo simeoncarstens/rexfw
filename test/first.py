@@ -26,8 +26,8 @@ if rank == 0:
 
     from rexfw.remasters import ExchangeMaster
     from rexfw.statistics import MCMCSamplingStatistics, Statistics
-    from rexfw.statistics.writers import ConsoleStatisticsWriter, SimpleConsoleMCMCStatisticsWriter, SimpleConsoleREStatisticsWriter
-    from rexfw.convenience.statistics import create_standard_averages
+    from rexfw.statistics.writers import ConsoleStatisticsWriter, SimpleConsoleMCMCStatisticsWriter, SimpleConsoleREStatisticsWriter, SimpleFileMCMCStatisticsWriter, SimpleFileREStatisticsWriter
+    from rexfw.convenience.statistics import create_standard_averages, create_standard_works
 
     # params = create_standard_HMCStepRENS_params(schedule, 15, timesteps)
     params = create_standard_RE_params(n_replicas)
@@ -35,17 +35,24 @@ if rank == 0:
     # params = create_standard_AMDRENS_params(schedule, 15, timesteps)
     
     local_pacc_avgs, re_pacc_avgs = create_standard_averages(replica_names)
-    stats = MCMCSamplingStatistics(comm, averages=local_pacc_avgs)# ,
-                                   # stats_writer=SimpleConsoleMCMCStatisticsWriter())
-    re_stats = Statistics(name='REStatistics', averages=re_pacc_avgs,
-                          stats_writer=SimpleConsoleREStatisticsWriter(['re_p_acc']))
+    works = create_standard_works(replica_names)
+
+    # from rexfw.statistics import SamplerStepsize
+    # local_sampler_elements = [SamplerStepsize('sampler_replica{}'.format(i)) for i in range(1, size)]
+
+    stats = MCMCSamplingStatistics(comm, elements=local_pacc_avgs,
+                                   stats_writer=[SimpleConsoleMCMCStatisticsWriter(),
+                                                 SimpleFileMCMCStatisticsWriter('/tmp/out.txt')])
+    re_stats = Statistics(name='REStatistics', elements=re_pacc_avgs + works,
+                          stats_writer=[SimpleConsoleREStatisticsWriter(),
+                                        SimpleFileREStatisticsWriter('/tmp/out_re.txt')])
     master = ExchangeMaster('master0', replica_names, params, comm=comm, 
                             sampling_statistics=stats, swap_statistics=re_stats)
 
     master.run(5000, swap_interval=5, status_interval=100, dump_interval=100000, 
                samples_folder='/baycells/scratch/carstens/test/', dump_step=1)
     master.terminate_replicas()
-
+    
     # print "MC p_acc:", 
     # for x in range(1, size):
     #     p = master.sampling_statistics.averages['sampler_replica{}'.format(x)]['p_acc'].value
@@ -59,8 +66,8 @@ if rank == 0:
     #     p = master.swap_statistics.averages['replica{}_replica{}'.format(x, x+1)]['p_acc'].value
     #     print "{:.2f}".format(p), 
 
-    from cPickle import dump
-    dump((master.swap_statistics.elements, master.swap_statistics.averages), open('/tmp/stats.pickle','w'))
+    # from cPickle import dump
+    # dump((master.swap_statistics.elements, master.swap_statistics.averages), open('/tmp/stats.pickle','w'))
 
 else:
 

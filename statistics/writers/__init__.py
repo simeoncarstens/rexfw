@@ -6,60 +6,36 @@ import sys
 
 from abc import ABCMeta, abstractmethod
 
-alphansort = lambda data: sorted(data, key=lambda item: (int(item.partition(' ')[0])
-                                                         if item[0].isdigit() else float('inf'), item))
 
 class AbstractStatisticsWriter(object):
 
-    _outstream = None
+    def __init__(self, separator, fields_to_write=None):
 
-    @abstractmethod
-    def write(self, step, elements, fields=None):
-
-        pass
-
-
-class ConsoleStatisticsWriter(AbstractStatisticsWriter):
-
-    def __init__(self, fields_to_write=None):
-
+        self._separator = separator
         self._fields_to_write = fields_to_write
 
-    _outstream = sys.stdout
-
-    # def write(self, step, elements, fields=None):
-    #     '''
-    #     Sorts keys by default alphanumerically
-    #     '''
-    #     for x in elements:
-    #         if fields is None:
-    #             temp_fields = x.keys()
-    #         else:
-    #             temp_fields = [k for k in x.keys() if k in fields]
-    #         self._write_header(step, elements, fields)
-    #         ## HACK
-    #         sorted_fields = self._sort_fields(temp_fields)
-    #         for k in sorted_fields:
-    #             self._outstream.write(self._format(k, x[k]) + ' ')
-    #         self._outstream.write('\n')
-
     def write(self, step, elements, which=None):
-        '''
-        Sorts keys by default alphanumerically
-        '''
 
         if which is None:
             which = self._fields_to_write
 
-        for x in elements:
-            self._write_step_header(step)
-            quantity_classes = {name: x.select(name=name) for name in which}
-            for name, klass in quantity_classes.iteritems():
-                sorted_quantities = self._sort_quantities(name, klass)
-                self._write_quantity_class_header(name)
-                for q in sorted_quantities:    
-                    self._outstream.write(self._format(q) + ' ')
-                self._outstream.write('\n')
+        self._write_step_header(step)
+        quantity_classes = {name: elements.select(name=name) for name in which}
+        for name, klass in quantity_classes.iteritems():
+            sorted_quantities = self._sort_quantities(name, klass)
+            self._write_quantity_class_header(name)
+            for q in sorted_quantities:    
+                self._outstream.write(self._format(q) + self._separator)
+            self._outstream.write('\n')
+
+class ConsoleStatisticsWriter(AbstractStatisticsWriter):
+
+    __metaclass__ = ABCMeta
+    
+    def __init__(self, fields_to_write=None):
+
+        super(ConsoleStatisticsWriter, self).__init__(' ', fields_to_write)
+        self._outstream = sys.stdout
         
     @abstractmethod
     def _format(self, quantity):
@@ -85,11 +61,11 @@ class SimpleConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
 
     def __init__(self):
 
-        super(SimpleConsoleMCMCStatisticsWriter, self).__init__(['p_acc', 'stepsize'])
+        super(SimpleConsoleMCMCStatisticsWriter, self).__init__(['mcmc_p_acc', 'stepsize'])
     
     def _format(self, quantity):
 
-        return '{:.2f}'.format(quantity.value)
+        return '{:.2f}'.format(quantity.current_value)
 
     def _write_step_header(self, step):
 
@@ -97,54 +73,119 @@ class SimpleConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
 
     def _sort_quantities(self, name, quantity_class):
 
-        return sorted(quantity_class, key=lambda x: int(x.sampler_name[len('sampler_replica'):]))
+        return sorted(quantity_class, key=lambda x: int(list(x.origins)[0][len('sampler_replica'):]))
     
-    @abstractmethod
     def _write_quantity_class_header(self, class_name):
-        if class_name == 'p_acc':
-            self._outstream.write('MCMC p_acc: ')
+        if class_name == 'mcmc_p_acc':
+            self._outstream.write('MCMC    p_acc: ')
         if class_name == 'stepsize':
-            self._outstream.write('MCMC stpsze: ')
+            self._outstream.write('MCMC stepsize: ')
 
     
 class SimpleConsoleREStatisticsWriter(ConsoleStatisticsWriter):
 
+    def __init__(self):
+
+        super(SimpleConsoleREStatisticsWriter, self).__init__(['re_p_acc'])
+
     def _format(self, quantity):
 
         if quantity.name == 're_p_acc':
-            return '{:.2f}'.format(quantity.value)
+            return '{:.2f}'.format(quantity.current_value)
 
     def _write_quantity_class_header(self, class_name):
 
-        self._outstream.write('RE p_acc:   ')
+        self._outstream.write('RE    p_acc:   ')
 
     def _sort_quantities(self, name, quantity_class):
 
         return sorted(quantity_class, key=lambda x: min([int(y[len('replica'):]) 
                                                          for y in x.origins]))
+
+    def _write_step_header(self, step):
+        pass
  
         
-# class AbstractSimpleFileStatisticsWriter(AbstractStatisticsWriter):
+class AbstractSimpleFileStatisticsWriter(AbstractStatisticsWriter):
 
-#     def __init__(self, filename):
+    __metaclass__ = ABCMeta
+    
+    def __init__(self, filename, fields_to_write=None):
 
-#         self._filename = filename
-#         self._outstream = file(filename, 'a')
-#         self._outstream.close()
-
-#     def write(self, step, elements, fields=None):
-
-#         self._outstream.open()
-#         super(SimpleFileStatisticsWriter, self).write(step, elements, fields)
-#         self._outstream.close()
+        super(AbstractSimpleFileStatisticsWriter, self).__init__('\t', fields_to_write)
         
+        self._filename = filename
+        self._outstream = open(filename, 'w')
+        self._write_header()
+        self._outstream.close()
+        self._separator = '\t'
 
-# class SimpleFileMCMCStatisticsWriter(AbstractStatisticsWriter):
+    def write(self, step, elements, fields=None):
 
-#     def _format(self, field_name, data):
+        self._outstream = open(self._filename, 'a')
+        super(AbstractSimpleFileStatisticsWriter, self).write(step, elements, fields)
+        self._outstream.close()
+        
+    @abstractmethod
+    def _write_quantity_class_header(self, class_name):
+        pass
 
-#         return float(data['p_acc'].__repr__())
+class SimpleFileMCMCStatisticsWriter(AbstractSimpleFileStatisticsWriter):
 
-#     def _write_header(self, step, elements, fields):
+    def __init__(self, filename, fields_to_write=None):
+        
+        super(SimpleFileMCMCStatisticsWriter, self).__init__(filename, fields_to_write)
 
-#         self._outstream.write('{} '.format(step))
+        self._separator = '\t'
+        self._fields_to_write = ['mcmc_p_acc']
+    
+    def _format(self, quantity):
+
+        return str(quantity.current_value)
+
+    def _write_header(self):
+
+        # self._outstream.write('{} '.format(step))
+        pass
+
+    def _write_step_header(self, step):
+
+        self._outstream.write('{}\t'.format(step))
+
+    def _sort_quantities(self, name, quantity_class):
+
+        return sorted(quantity_class, key=lambda x: int(list(x.origins)[0][len('sampler_replica'):]))
+
+    def _write_quantity_class_header(self, class_name):
+        pass
+
+
+class SimpleFileREStatisticsWriter(AbstractSimpleFileStatisticsWriter):
+
+    def __init__(self, filename, fields_to_write=None):
+        
+        super(SimpleFileREStatisticsWriter, self).__init__(filename, fields_to_write)
+
+        self._separator = '\t'
+        self._fields_to_write = ['re_p_acc'] if fields_to_write is None else fields_to_write
+    
+    def _format(self, quantity):
+
+        return str(quantity.current_value)
+
+    def _write_header(self):
+
+        # self._outstream.write('{} '.format(step))
+        pass
+
+    def _write_step_header(self, step):
+
+        self._outstream.write('{}\t'.format(step))
+
+    def _sort_quantities(self, name, quantity_class):
+
+        return sorted(quantity_class, key=lambda x: min([int(y[len('replica'):]) 
+                                                         for y in x.origins]))
+
+    def _write_quantity_class_header(self, class_name):
+        pass

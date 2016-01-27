@@ -102,11 +102,10 @@ class ExchangeMaster(object):
 
     def _update_swap_stats(self, swap_list, results, step):
 
-        from rexfw.statistics import REMoveAccepted, REWorks
         for j, (r1, r2, _) in enumerate(swap_list):
-            # self.swap_statistics.update(step, {r1+'_'+r2: REStats(*results[j])})
-            self.swap_statistics.update(step, REMoveAccepted(results[j][0], r1, r2))
-            self.swap_statistics.update(step, REWorks(results[j][1], r1, r2))
+            self.swap_statistics.update(step, 're_p_acc', {r1, r2}, results[j][0])
+            self.swap_statistics.update(step, 're_accepted', {r1, r2}, results[j][0])
+            self.swap_statistics.update(step, 're_works', {r1, r2}, results[j][1])
                 
     def _calculate_swap_list(self, i):
 
@@ -125,9 +124,8 @@ class ExchangeMaster(object):
         import os
         os.system('mkdir '+samples_folder)
         os.system('mkdir '+samples_folder+'statistics/')
-        
+
         for step in xrange(n_iterations):
-            print step
             if step % swap_interval == 0 and step > 0:
                 swap_list = self._calculate_swap_list(step)
                 results = self._perform_exchanges(swap_list)
@@ -143,14 +141,14 @@ class ExchangeMaster(object):
                 self._send_dump_samples_request(samples_folder, step - dump_interval, step, dump_step)
 
             if step % status_interval == 0 and step > 0:
-                self.sampling_statistics.write_averages(step)
-                self.swap_statistics.write_averages(step)
+                self.sampling_statistics.write_last(step)
+                self.swap_statistics.write_last(step)
                 ## HACK (obviously)
                 from cPickle import dump
-                dump((self.sampling_statistics._elements, self.sampling_statistics._averages), 
-                     open(samples_folder+'statistics/sampling_stats.pickle','w'))
-                dump((self.swap_statistics._elements, self.swap_statistics._averages), 
-                     open(samples_folder+'statistics/swap_stats.pickle','w'))
+                # dump((self.sampling_statistics._elements, self.sampling_statistics._averages), 
+                #      open(samples_folder+'statistics/sampling_stats.pickle','w'))
+                # dump((self.swap_statistics._elements, self.swap_statistics._averages), 
+                #      open(samples_folder+'statistics/swap_stats.pickle','w'))
 
             self.step += 1
 
