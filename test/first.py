@@ -79,7 +79,6 @@ if rank == 0:
 else:
 
     from csb.statistics.samplers import State
-    from csb.statistics.pdf import Normal
     
     from rexfw.replicas import Replica
     from rexfw.slaves import Slave
@@ -87,7 +86,7 @@ else:
     from rexfw.samplers.hmc import CompatibleHMCSampler
     from rexfw.proposers import REProposer, LMDRENSProposer, HMCStepRENSProposer, AMDRENSProposer
 
-    from rexfw.test.pdfs import MyNormal
+    from rexfw.test.test_pdfs import MyNormal
     
     # proposer = REProposer('prop{}'.format(rank))
 

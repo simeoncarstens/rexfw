@@ -85,36 +85,6 @@ class ParamInterpolationPDF(object):
             
         return res
 
-
-class OldISDInterpolatingPDF(object):
-    '''
-    Linear interpolation between two pdfs, p(x,t) = (1-l)*p(x; params0) + l*p(x; params1)
-    '''
-    
-    def __init__(self, pdf, params, posterior=None):
-
-        self.pdf = pdf
-        n_steps = params.n_steps
-        dt = params.timestep
-        self.pdf_params = pdf_params = params.pdf_params
-        self.l = lambda t: t / (n_steps * dt)
-        from protlib import LambdaISDWrapper
-        if posterior is None:
-            posterior = self.pdf._isdwrapper.posterior
-        else:
-            posterior = posterior
-        self._lambdaisdwrapper = LambdaISDWrapper((pdf_params['lammda'][0], pdf_params['q'][0]),
-                                                  (pdf_params['lammda'][-1], pdf_params['q'][-1]),
-                                                  posterior)
-
-    def log_prob(self, x, t):
-
-        return self._lambdaisdwrapper.log_prob(x, self.l(t))
-    
-    def gradient(self, x, t, onlyhere=False):
-        
-        return self._lambdaisdwrapper.gradient(x, self.l(t), onlyhere=onlyhere)    
-
     
 class AbstractRENSProposer(AbstractProposer):
 

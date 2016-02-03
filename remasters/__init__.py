@@ -61,12 +61,8 @@ class ExchangeMaster(object):
             ## this is to sync everything and really hacky
             self._comm.recv(source=r1)
 
-            print "sent params:", 1.0 / numpy.array(params.proposer_params.pdf_params.values()[0]) ** 2
             self._send_propose_request(r1, r2, params)
             params.proposer_params.reverse()
-            from time import sleep
-            sleep(1.0)
-            print "sent params:", 1.0 / numpy.array(params.proposer_params.pdf_params.values()[0]) ** 2
             self._send_propose_request(r2, r1, params)
             params.proposer_params.reverse()
             
@@ -76,8 +72,6 @@ class ExchangeMaster(object):
         for i, (r1, r2, params) in enumerate(swap_list):
             works[i][0] = self._comm.recv(source=r1).data
             works[i][1] = self._comm.recv(source=r2).data
-
-        # print works
             
         return works
 
