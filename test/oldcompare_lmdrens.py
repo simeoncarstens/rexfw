@@ -60,14 +60,14 @@ params = [LTMDRENSSwapParameterInfo(samplers[i], samplers[i+1], rens_timesteps[i
 # Initialize thermostatted RENS algorithm:
 algorithm = LTMDRENS(samplers, params)
 
-algorithm = ReplicaExchangeMC(samplers, params)
+# algorithm = ReplicaExchangeMC(samplers, params)
 
 # Initialize swapping scheme:
 swapper = AlternatingAdjacentSwapScheme(algorithm)
 
 # Initialize empty list which will store the samples:
 states = []
-for i in range(15000):
+for i in range(5):#15000):
     if i % 5 == 0:
         # print "swap"
         swapper.swap_all()

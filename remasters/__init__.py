@@ -33,8 +33,6 @@ class ExchangeMaster(object):
             swap_list_generator = StandardSwapListGenerator(self._n_replicas, self._swap_params)
         self._swap_list_generator = swap_list_generator
         self.step = 0
-
-        self.sampling_statistics.initialize(self.replica_names)
         
     def _send_propose_request(self, r1, r2, params):
         
@@ -62,9 +60,13 @@ class ExchangeMaster(object):
             ## Receives a None from r1 and r2; sent once buffered state / energies have been set
             ## this is to sync everything and really hacky
             self._comm.recv(source=r1)
-            
+
+            print "sent params:", 1.0 / numpy.array(params.proposer_params.pdf_params.values()[0]) ** 2
             self._send_propose_request(r1, r2, params)
             params.proposer_params.reverse()
+            from time import sleep
+            sleep(1.0)
+            print "sent params:", 1.0 / numpy.array(params.proposer_params.pdf_params.values()[0]) ** 2
             self._send_propose_request(r2, r1, params)
             params.proposer_params.reverse()
             
@@ -75,6 +77,8 @@ class ExchangeMaster(object):
             works[i][0] = self._comm.recv(source=r1).data
             works[i][1] = self._comm.recv(source=r2).data
 
+        # print works
+            
         return works
 
     def _calculate_acceptance(self, works):
@@ -103,9 +107,9 @@ class ExchangeMaster(object):
     def _update_swap_stats(self, swap_list, results, step):
 
         for j, (r1, r2, _) in enumerate(swap_list):
-            self.swap_statistics.update(step, 're_p_acc', {r1, r2}, results[j][0])
-            self.swap_statistics.update(step, 're_accepted', {r1, r2}, results[j][0])
-            self.swap_statistics.update(step, 're_works', {r1, r2}, results[j][1])
+            self.swap_statistics.update(step, 're_p_acc', [r1, r2], results[j][0])
+            self.swap_statistics.update(step, 're_accepted', [r1, r2], results[j][0])
+            self.swap_statistics.update(step, 're_works', [r1, r2], results[j][1])
                 
     def _calculate_swap_list(self, i):
 
@@ -126,7 +130,7 @@ class ExchangeMaster(object):
         os.system('mkdir '+samples_folder+'statistics/')
 
         for step in xrange(n_iterations):
-            if step % swap_interval == 0 and step > 0:
+            if step % swap_interval == 0:# and step > 0:
                 swap_list = self._calculate_swap_list(step)
                 results = self._perform_exchanges(swap_list)
                 self._update_swap_stats(swap_list, results, step)
@@ -141,17 +145,15 @@ class ExchangeMaster(object):
                 self._send_dump_samples_request(samples_folder, step - dump_interval, step, dump_step)
 
             if step % status_interval == 0 and step > 0:
-                self.sampling_statistics.write_last(step)
-                self.swap_statistics.write_last(step)
-                ## HACK (obviously)
-                from cPickle import dump
-                # dump((self.sampling_statistics._elements, self.sampling_statistics._averages), 
-                #      open(samples_folder+'statistics/sampling_stats.pickle','w'))
-                # dump((self.swap_statistics._elements, self.swap_statistics._averages), 
-                #      open(samples_folder+'statistics/swap_stats.pickle','w'))
+                self._write_statistics(step)
 
             self.step += 1
 
+    def _write_statistics(self, step):
+        
+        self.sampling_statistics.write_last(step)
+        self.swap_statistics.write_last(step)
+            
     def _send_sample_requests(self, targets):
 
         for t in targets:
@@ -169,3 +171,4 @@ class ExchangeMaster(object):
         for r in self.replica_names:
             parcel = Parcel(self.name, r, DieRequest(self.name))
             self._comm.send(parcel, dest=r)
+

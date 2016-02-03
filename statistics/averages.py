@@ -15,6 +15,7 @@ class AbstractAverage(LoggedQuantity):
 
         super(AbstractAverage, self).__init__(name)
         self._n_contributions = 0
+        self._untouched = True
 
     @abstractmethod
     def _calculate_new_value(self, info):
@@ -24,9 +25,10 @@ class AbstractAverage(LoggedQuantity):
 
         new_value = self._calculate_new_value(value)
 
-        if self.current_value == self._default_value:
+        if self._untouched:
             self._values.update(**{str(step): new_value})
             self._n_contributions += 1
+            self._untouched = False
         else:
             new = self.current_value * self._n_contributions / float(self._n_contributions + 1)
             # self.value *= self._n_contributions / float(self._n_contributions + 1)
@@ -34,10 +36,10 @@ class AbstractAverage(LoggedQuantity):
             # self.value += new_value / float(self._n_contributions)
             new += new_value / float(self._n_contributions)
             self._values.update(**{str(step): new})
-    
-    @abstractmethod
-    def __repr__(self):
-        pass
+
+    # @abstractmethod
+    # def __repr__(self):
+    #     pass
 
 
 class MCMCAcceptanceRateAverage(AbstractAverage):
@@ -47,7 +49,7 @@ class MCMCAcceptanceRateAverage(AbstractAverage):
         super(MCMCAcceptanceRateAverage, self).__init__('mcmc_p_acc')
 
         self.replica = replica
-        self.origins.add(replica)
+        self.origins.append(replica)
         self._default_value = 0.0
     
     def _calculate_new_value(self, value):
@@ -65,8 +67,8 @@ class REAcceptanceRateAverage(AbstractAverage):
         super(REAcceptanceRateAverage, self).__init__('re_p_acc')
 
         self.replica1, self.replica2 = replica1, replica2
-        self.origins.add(replica1)
-        self.origins.add(replica2)
+        self.origins.append(replica1)
+        self.origins.append(replica2)
         self._default_value = 0.0
 
     def _calculate_new_value(self, value):

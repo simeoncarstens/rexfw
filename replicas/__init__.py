@@ -137,6 +137,9 @@ class Replica(object):
                                                     self._buffered_partner_state,
                                                     self._buffered_partner_energy,
                                                     proposer_params)
+
+        # print "pos:", proposal[-1].position
+        
         self._comm.send(Parcel(self.name, self._current_master, float(proposal.work)), self._current_master)
         self._buffered_proposal = proposal[-1]
 

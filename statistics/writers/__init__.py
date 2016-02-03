@@ -54,22 +54,25 @@ class ConsoleStatisticsWriter(AbstractStatisticsWriter):
         pass
     
 
-class SimpleConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
+class StandardConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
     '''
     Only prints acceptance rate and stepsize
     '''
 
     def __init__(self):
 
-        super(SimpleConsoleMCMCStatisticsWriter, self).__init__(['mcmc_p_acc', 'stepsize'])
+        super(StandardConsoleMCMCStatisticsWriter, self).__init__(['mcmc_p_acc', 'stepsize'])
     
     def _format(self, quantity):
 
-        return '{:.2f}'.format(quantity.current_value)
+        if quantity.name == 'mcmc_p_acc':
+            return '{: >.3f}   '.format(quantity.current_value)
+        if quantity.name == 'stepsize':
+            return '{: <.2e}'.format(quantity.current_value)
 
     def _write_step_header(self, step):
 
-        self._outstream.write('######### MC step: {}#########\n'.format(step))
+        self._outstream.write('######### MC step: {} #########\n'.format(step))
 
     def _sort_quantities(self, name, quantity_class):
 
@@ -82,20 +85,20 @@ class SimpleConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
             self._outstream.write('MCMC stepsize: ')
 
     
-class SimpleConsoleREStatisticsWriter(ConsoleStatisticsWriter):
+class StandardConsoleREStatisticsWriter(ConsoleStatisticsWriter):
 
     def __init__(self):
 
-        super(SimpleConsoleREStatisticsWriter, self).__init__(['re_p_acc'])
+        super(StandardConsoleREStatisticsWriter, self).__init__(['re_p_acc'])
 
     def _format(self, quantity):
 
         if quantity.name == 're_p_acc':
-            return '{:.2f}'.format(quantity.current_value)
+            return '{: >.3f}   '.format(quantity.current_value)
 
     def _write_quantity_class_header(self, class_name):
 
-        self._outstream.write('RE    p_acc:   ')
+        self._outstream.write('RE      p_acc: ')
 
     def _sort_quantities(self, name, quantity_class):
 
@@ -106,13 +109,13 @@ class SimpleConsoleREStatisticsWriter(ConsoleStatisticsWriter):
         pass
  
         
-class AbstractSimpleFileStatisticsWriter(AbstractStatisticsWriter):
+class AbstractFileStatisticsWriter(AbstractStatisticsWriter):
 
     __metaclass__ = ABCMeta
     
     def __init__(self, filename, fields_to_write=None):
 
-        super(AbstractSimpleFileStatisticsWriter, self).__init__('\t', fields_to_write)
+        super(AbstractFileStatisticsWriter, self).__init__('\t', fields_to_write)
         
         self._filename = filename
         self._outstream = open(filename, 'w')
@@ -123,18 +126,18 @@ class AbstractSimpleFileStatisticsWriter(AbstractStatisticsWriter):
     def write(self, step, elements, fields=None):
 
         self._outstream = open(self._filename, 'a')
-        super(AbstractSimpleFileStatisticsWriter, self).write(step, elements, fields)
+        super(AbstractFileStatisticsWriter, self).write(step, elements, fields)
         self._outstream.close()
         
     @abstractmethod
     def _write_quantity_class_header(self, class_name):
         pass
 
-class SimpleFileMCMCStatisticsWriter(AbstractSimpleFileStatisticsWriter):
+class StandardFileMCMCStatisticsWriter(AbstractFileStatisticsWriter):
 
     def __init__(self, filename, fields_to_write=None):
         
-        super(SimpleFileMCMCStatisticsWriter, self).__init__(filename, fields_to_write)
+        super(StandardFileMCMCStatisticsWriter, self).__init__(filename, fields_to_write)
 
         self._separator = '\t'
         self._fields_to_write = ['mcmc_p_acc']
@@ -160,14 +163,15 @@ class SimpleFileMCMCStatisticsWriter(AbstractSimpleFileStatisticsWriter):
         pass
 
 
-class SimpleFileREStatisticsWriter(AbstractSimpleFileStatisticsWriter):
+class StandardFileREStatisticsWriter(AbstractFileStatisticsWriter):
 
     def __init__(self, filename, fields_to_write=None):
         
-        super(SimpleFileREStatisticsWriter, self).__init__(filename, fields_to_write)
+        fields_to_write = ['re_p_acc'] if fields_to_write is None else fields_to_write
+        
+        super(StandardFileREStatisticsWriter, self).__init__(filename, fields_to_write)
 
         self._separator = '\t'
-        self._fields_to_write = ['re_p_acc'] if fields_to_write is None else fields_to_write
     
     def _format(self, quantity):
 
@@ -189,3 +193,19 @@ class SimpleFileREStatisticsWriter(AbstractSimpleFileStatisticsWriter):
 
     def _write_quantity_class_header(self, class_name):
         pass
+
+
+class StandardFileREWorksStatisticsWriter(object):
+
+    def __init__(self, outfolder):
+
+        self._outfolder = outfolder
+        self._fields_to_write = ['re_works']
+
+    def write(self, elements):
+
+        from cPickle import dump
+        
+        for e in elements:
+            with open(self._outfolder + 'works_{}-{}.pickle'.format(*e.origins), 'w') as opf:
+                dump(e.values, opf)

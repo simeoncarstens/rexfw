@@ -8,16 +8,16 @@ from rexfw.test.pdfs import MyNormal
 std_devs = 1.0 / numpy.sqrt(numpy.array([7., 5., 3., 1.]))[0:4]
 init = State(numpy.array([1.0]))
 pdfs = [MyNormal(sigma=std_dev) for std_dev in std_devs]
-samplers = [RWMCSampler(pdf, State(numpy.array([2.0 + 0.0*i+0.0*1])), 0.7) for i, pdf in enumerate(pdfs)]
+samplers = [RWMCSampler(pdf, State(numpy.array([float(i)+1])), 0.7) for i, pdf in enumerate(pdfs)]
 timesteps = [0.3, 0.5, 0.7][0:3]
 im_steps = 15
     
-from rexfw.proposers import InterpolatingPDF
+from rexfw.proposers import ParamInterpolationPDF
 from collections import namedtuple
 P = namedtuple('P', 'n_steps timestep pdf_params')
-ipdfs = [InterpolatingPDF(MyNormal(), 
-                          P(float(im_steps), 1.0, 
-                            {'sigma': (std_devs[i], std_devs[i+1])})) 
+ipdfs = [ParamInterpolationPDF(MyNormal(), 
+                               P(float(im_steps), 1.0, 
+                               {'sigma': (std_devs[i], std_devs[i+1])})) 
          for i in range(len(pdfs) - 1)]
 
 rens_gradients = [lambda x, l, i=i: ipdfs[i].gradient(x, l*1.0 * float(im_steps)) 
@@ -30,7 +30,7 @@ params = [ThermostattedMDRENSSwapParameterInfo(samplers[i], samplers[i+1], times
 algorithm = ThermostattedMDRENS(samplers, params)
 
 swapper = AlternatingAdjacentSwapScheme(algorithm)
-nsamples = 2*15000
+nsamples = 5#2*15000
 
 samples = []
 

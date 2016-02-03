@@ -6,32 +6,35 @@ import numpy
 from rexfw.test.pdfs import MyNormal
 
 std_devs = 1.0 / numpy.sqrt(numpy.array([7., 5., 3., 1.]))
-init = State(numpy.array([1.0]))
 pdfs = [MyNormal(sigma=std_dev) for std_dev in std_devs]
-samplers = [RWMCSampler(pdf, init, 0.7) for pdf in pdfs]
+samplers = [RWMCSampler(pdf, State(numpy.array([float(i) + 1])), 0.7) for i, pdf in enumerate(pdfs)]
 timesteps = [0.3, 0.5, 0.7]
 
-im_steps = 15
+im_steps = 5
     
-from rexfw.proposers import InterpolatingPDF
+from rexfw.proposers import ParamInterpolationPDF
 from collections import namedtuple
 P = namedtuple('P', 'n_steps timestep pdf_params')
-ipdfs = [InterpolatingPDF(MyNormal(), 
-                          P(float(im_steps), 1.0, 
-                            {'sigma': (std_devs[i], std_devs[i+1])})) 
+ipdfs = [ParamInterpolationPDF(MyNormal(), 
+                               P(float(im_steps), 1.0, 
+                               {'sigma': (std_devs[i], std_devs[i+1])})) 
          for i in range(len(pdfs) - 1)]
-rens_gradients = [lambda x, l, i=i: ipdfs[i].gradient(x, l*1.0 * float(im_steps)) 
-                  for i, pdf in enumerate(ipdfs)]
+# rens_gradients = [lambda x, l, i=i: ipdfs[i].gradient(x, l*1.0 * float(im_steps)) 
+#                   for i, pdf in enumerate(ipdfs)]
+
+rens_gradients = [lambda x, l, i=i: l * pdfs[i+1].gradient(x) + (1.0 - l) * pdfs[i].gradient(x) 
+                  for i in range(len(pdfs) - 1)]
 
 params = [HMCStepRENSSwapParameterInfo(samplers[i], samplers[i+1], timesteps[i], 1, 1,
                                        rens_gradients[i], im_steps)
           for i in range(len(std_devs) - 1)]
 
-algorithm = HMCStepRENS(samplers, params)
+from fastcode import FastHMCStepRENS
+algorithm = FastHMCStepRENS(samplers, params)
 
 swapper = AlternatingAdjacentSwapScheme(algorithm)
 
-nsamples = 15000
+nsamples = 5#15000
 
 samples = []
 

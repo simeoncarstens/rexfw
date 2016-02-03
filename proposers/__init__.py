@@ -25,10 +25,9 @@ class AbstractProposer(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, comm):
+    def __init__(self, name):
 
         self.name = name
-        self._comm = comm
 
     @abstractmethod
     def propose(self, local_replica, partner_state, partner_energy, params):
@@ -92,54 +91,50 @@ class OldISDInterpolatingPDF(object):
     Linear interpolation between two pdfs, p(x,t) = (1-l)*p(x; params0) + l*p(x; params1)
     '''
     
-    def __init__(self, pdf, params):
+    def __init__(self, pdf, params, posterior=None):
 
         self.pdf = pdf
         n_steps = params.n_steps
         dt = params.timestep
-        pdf_params = params.pdf_params
+        self.pdf_params = pdf_params = params.pdf_params
         self.l = lambda t: t / (n_steps * dt)
         from protlib import LambdaISDWrapper
+        if posterior is None:
+            posterior = self.pdf._isdwrapper.posterior
+        else:
+            posterior = posterior
         self._lambdaisdwrapper = LambdaISDWrapper((pdf_params['lammda'][0], pdf_params['q'][0]),
                                                   (pdf_params['lammda'][-1], pdf_params['q'][-1]),
-                                                  self.pdf._isdwrapper.posterior)
+                                                  posterior)
 
     def log_prob(self, x, t):
 
         return self._lambdaisdwrapper.log_prob(x, self.l(t))
     
-    def gradient(self, x, t):
+    def gradient(self, x, t, onlyhere=False):
+        
+        return self._lambdaisdwrapper.gradient(x, self.l(t), onlyhere=onlyhere)    
 
-        return self._lambdaisdwrapper.gradient(x, self.l(t))    
-
-
-# if __name__ == '__main__':
-#     import os
-#     os.chdir('/baycells/home/carstens/projects/rens/py/sampling/')
-#     from pdfs import UBQISDPosterior
-#     pdf = UBQISDPosterior()
-#     from collections import namedtuple
-#     new = OldISDInterpolatingPDF(pdf, namedtuple('bla', 'n_steps timestep pdf_params')(100, 1.0, {'lammda': [1.0, 0.9], 'q': [1.0, 1.03]}))
-#     x = numpy.random.normal(size=370, scale=7)
-#     from protlib import LambdaISDWrapper
-#     old = LambdaISDWrapper((1.0, 1.0), (0.9, 1.03), pdf._isdwrapper.posterior)
-
-#     print old.log_prob(x, 1.0), new.log_prob(x, 1.0)
-    
     
 class AbstractRENSProposer(AbstractProposer):
 
-    def __init__(self, name, comm, interpolating_pdf=ParamInterpolationPDF):
+    def __init__(self, name, interpolating_pdf=ParamInterpolationPDF):
 
-        super(AbstractRENSProposer, self).__init__(name, comm)
+        super(AbstractRENSProposer, self).__init__(name)
 
         self._interpolating_pdf = interpolating_pdf
         
     def propose(self, local_replica, partner_state, partner_energy, params):
-        
+
         n_steps = params.n_steps
         timestep = params.timestep
-        pdf = self._interpolating_pdf(local_replica.pdf, params)
+
+        from cPickle import load
+
+        if self._interpolating_pdf.__name__ ==  'OldISDInterpolatingPDF':
+            pdf = self._interpolating_pdf(local_replica.pdf, params, self.posterior)
+        else:
+            pdf = self._interpolating_pdf(local_replica.pdf, params)
         propagator = self._propagator_factory(pdf, params)
         
         ps_pos = partner_state.position
@@ -170,7 +165,7 @@ class LMDRENSProposer(AbstractRENSProposer):
 
         from langevin import LangevinPropagator
 
-        return LangevinPropagator(pdf.gradient, params.timestep, params.gamma)
+        return LangevinPropagator(pdf.gradient, params.timestep, gamma=params.gamma)
 
 
 class AMDRENSProposer(AbstractRENSProposer):
@@ -184,7 +179,7 @@ class AMDRENSProposer(AbstractRENSProposer):
                                          update_interval=params.update_interval)
 
 
-from csb.statistics.samplers.mc.multichain import HMCStepRENS
+
 import csb.statistics.samplers.mc.neqsteppropagator as noneqprops
 
 
@@ -198,16 +193,47 @@ class HMCStepRENSProposer(AbstractRENSProposer):
         
         fields = 'timestep gradient hmc_traj_length hmc_iterations intermediate_steps mass_matrix integrator'
         FakeParams = namedtuple('FakeParams', fields)
-
-        prot = lambda t, tau: t / tau
+        
         fake_timestep = params.timestep
         n_steps = params.n_steps
-        t_prot = lambda t: prot(t, n_steps)
 
         Bla = namedtuple('Bla', 'n_steps timestep pdf_params')
         p = Bla(n_steps, 1.0, params.pdf_params)
         
-        interp_pdf = self._interpolating_pdf(pdf, p)
+        if self._interpolating_pdf.__name__ ==  'OldISDInterpolatingPDF':
+            pdf = self._interpolating_pdf(pdf, p, self.posterior)
+            print "loaded proprietary posterior"
+        else:
+            pdf = self._interpolating_pdf(pdf, p)
+
+        interp_pdf = pdf
+                
+        # class P(object):
+        #     def log_prob(self, x, i):
+        #         i=float(i)
+        #         old = pdf['sigma']
+        #         pdf['sigma'] = params.pdf_params['sigma'][0]
+        #         a = pdf.log_prob(x)
+        #         pdf['sigma'] = params.pdf_params['sigma'][-1]
+        #         b = pdf.log_prob(x)
+        #         pdf['sigma']=old
+
+        #         return i / float(n_steps) * b + (1.0 - i / float(n_steps)) * a
+            
+        #     def gradient(self, x, i):
+
+        #         l = i / float(n_steps)
+                
+        #         l=float(l)
+        #         # print l
+        #         old = pdf['sigma']
+        #         pdf['sigma'] = params.pdf_params['sigma'][0]
+        #         a = pdf.gradient(x)
+        #         pdf['sigma'] = params.pdf_params['sigma'][-1]
+        #         b = pdf.gradient(x)
+        #         pdf['sigma']=old
+
+        #         return l * b + (1.0 - l) * a
         
         im_log_probs = [lambda x, i=i: interp_pdf.log_prob(x, i) 
                         for i in range(n_steps + 1)]
@@ -220,33 +246,48 @@ class HMCStepRENSProposer(AbstractRENSProposer):
         perturbations = [noneqprops.ReducedHamiltonianPerturbation(im_sys_infos[i], im_sys_infos[i+1])
                         for i in range(n_steps)]
 
+
+        ## before I mixed up hmc_traj_length and hmc_iterations, check whether this was acutally a good idea
         fake_params = FakeParams(timestep=params.timestep, 
                                  gradient=interp_pdf.gradient,
-                                 hmc_traj_length=1,
-                                 hmc_iterations=1,
+                                 hmc_traj_length=params.hmc_traj_length,
+                                 hmc_iterations=params.n_hmc_iterations,
                                  intermediate_steps=params.n_steps,
                                  mass_matrix=None,
                                  integrator=FastLeapFrog)
 
-        im_sys_infos = self._add_gradients(im_sys_infos, fake_params, t_prot)#, grads)
+        im_sys_infos = self._add_gradients(im_sys_infos, fake_params)
         propagations = self._setup_propagations(im_sys_infos, fake_params)
-        
         steps = [Step(perturbations[i], propagations[i]) for i in range(n_steps)]
-
+        
         return Protocol(steps)
 
     def _setup_propagations(self, *params):
 
-        return HMCStepRENS._setup_propagations(*params)
+        if True:
+            from fastcode import FastHMCStepRENS
 
-    def _add_gradients(self, *params):
-        
-        return HMCStepRENS._add_gradients(*params)
+            return FastHMCStepRENS._setup_propagations(*params)
+        else:
+            ## leaks A LOT of memory, gotta fix this in CSB.
+            from csb.statistics.samplers.mc.multichain import HMCStepRENS
+
+            return HMCStepRENS._setup_propagations(*params)
+
+    def _add_gradients(self, im_sys_infos, param_info):
+
+        im_gradients = [lambda x, t, i=i: param_info.gradient(x, i)
+                        for i in range(param_info.intermediate_steps + 1)]
+
+        for i, s in enumerate(im_sys_infos):
+            s.hamiltonian.gradient = im_gradients[i]
+
+        return im_sys_infos
     
     def _propagator_factory(self, pdf, params):
 
         protocol = self._setup_protocol(pdf, params)
-
+        
         return noneqprops.NonequilibriumStepPropagator(protocol)
 
     def propose(self, local_replica, partner_state, partner_energy, params):
@@ -255,7 +296,7 @@ class HMCStepRENSProposer(AbstractRENSProposer):
         propagator = self._propagator_factory(local_replica.pdf, params)
 
         ps_pos = partner_state.position
-        traj = propagator.generate(State(ps_pos, numpy.random.normal(size=ps_pos.shape)))
+        traj = propagator.generate(State(ps_pos))
         traj = GeneralTrajectory([traj.initial, traj.final], work=traj.work)
-
+        
         return traj        

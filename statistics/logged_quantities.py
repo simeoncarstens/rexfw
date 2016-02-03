@@ -13,7 +13,7 @@ class LoggedQuantity(object):
         self._default_value = None
         self.step = None
         self._name = name
-        self.origins = set()
+        self.origins = []
 
     def __getitem__(self, step):
         return self.values[str(step)] if step != -1 else self.current_value
@@ -40,11 +40,11 @@ class SamplerStepsize(LoggedQuantity):
     def __init__(self, sampler_name):
 
         super(SamplerStepsize, self).__init__('stepsize')
-        self.origins.add(sampler_name)
+        self.origins.append(sampler_name)
 
     def __repr__(self):
 
-        return 'stepsize {}: {}'.format(list(self.origins)[0], self.current_value)
+        return 'stepsize {}: {}'.format(self.origins[0], self.current_value)
         
 
 class MCMCMoveAccepted(LoggedQuantity):
@@ -52,12 +52,12 @@ class MCMCMoveAccepted(LoggedQuantity):
     def __init__(self, sampler_name):
 
         super(MCMCMoveAccepted, self).__init__('mcmc_accepted')
-        self.origins.add(sampler_name)
-        self.__default_value = None
+        self.origins.append(sampler_name)
+        self._default_value = None
 
     def __repr__(self):
 
-        return 'accepted {}: {}'.format(list(self.origins)[0], self.current_value)
+        return 'accepted {}: {}'.format(self.origins[0], self.current_value)
 
 
 class REMoveAccepted(LoggedQuantity):
@@ -65,13 +65,13 @@ class REMoveAccepted(LoggedQuantity):
     def __init__(self, replica1, replica2):
 
         super(REMoveAccepted, self).__init__('re_accepted')
-        self.origins.add(replica1)
-        self.origins.add(replica2)
+        self.origins.append(replica1)
+        self.origins.append(replica2)
         self.__default_value = None
     
     def __repr__(self):
 
-        return 'accepted {} <> {}: {}'.format(sorted(list(self.origins))[0], sorted(list(self.origins))[1], 
+        return 'accepted {} <> {}: {}'.format(self.origins[0], self.origins[1], 
                                               self.value)
 
 
@@ -82,11 +82,11 @@ class REWorks(LoggedQuantity):
         import numpy 
         
         super(REWorks, self).__init__('re_works')
-        self.origins.add(replica1)
-        self.origins.add(replica2)
+        self.origins.append(replica1)
+        self.origins.append(replica2)
         self._default_value = numpy.array([0.0,0.0])
     
     def __repr__(self):
 
-        return 'works {} <> {}: {}'.format(sorted(list(self.origins))[0], sorted(list(self.origins))[1], 
+        return 'works {} <> {}: {}'.format(self.origins[0], self.origins[1], 
                                            self.current_value)

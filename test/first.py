@@ -24,14 +24,19 @@ timesteps = [0.3, 0.5, 0.7]
 
 if rank == 0:
 
+    print 1.0 / sigmas ** 2
     from rexfw.remasters import ExchangeMaster
-    from rexfw.statistics import MCMCSamplingStatistics, Statistics
-    from rexfw.statistics.writers import ConsoleStatisticsWriter, SimpleConsoleMCMCStatisticsWriter, SimpleConsoleREStatisticsWriter, SimpleFileMCMCStatisticsWriter, SimpleFileREStatisticsWriter
+    from rexfw.statistics import MCMCSamplingStatistics, REStatistics
+    from rexfw.statistics.writers import ConsoleStatisticsWriter, StandardConsoleMCMCStatisticsWriter, StandardConsoleREStatisticsWriter, StandardFileMCMCStatisticsWriter, StandardFileREStatisticsWriter, StandardFileREWorksStatisticsWriter
     from rexfw.convenience.statistics import create_standard_averages, create_standard_works
 
-    # params = create_standard_HMCStepRENS_params(schedule, 15, timesteps)
-    params = create_standard_RE_params(n_replicas)
-    # params = create_standard_LMDRENS_params(schedule, 15, timesteps, 1.0)
+    # params = create_standard_HMCStepRENS_params(schedule=schedule, 
+    #                                             n_intermediate_steps=5,
+    #                                             timesteps=timesteps,
+    #                                             n_hmc_iterations=1,
+    #                                             hmc_traj_length=1)
+    # params = create_standard_RE_params(n_replicas)
+    params = create_standard_LMDRENS_params(schedule, 15, timesteps, 1.0)
     # params = create_standard_AMDRENS_params(schedule, 15, timesteps)
     
     local_pacc_avgs, re_pacc_avgs = create_standard_averages(replica_names)
@@ -41,15 +46,17 @@ if rank == 0:
     # local_sampler_elements = [SamplerStepsize('sampler_replica{}'.format(i)) for i in range(1, size)]
 
     stats = MCMCSamplingStatistics(comm, elements=local_pacc_avgs,
-                                   stats_writer=[SimpleConsoleMCMCStatisticsWriter(),
-                                                 SimpleFileMCMCStatisticsWriter('/tmp/out.txt')])
-    re_stats = Statistics(name='REStatistics', elements=re_pacc_avgs + works,
-                          stats_writer=[SimpleConsoleREStatisticsWriter(),
-                                        SimpleFileREStatisticsWriter('/tmp/out_re.txt')])
+                                   stats_writer=[StandardConsoleMCMCStatisticsWriter(),
+                                                 StandardFileMCMCStatisticsWriter('/tmp/out.txt')])
+    re_stats = REStatistics(name='REStatistics', elements=re_pacc_avgs, work_elements=works,
+                            stats_writer=[StandardConsoleREStatisticsWriter(),
+                                          StandardFileREStatisticsWriter('/tmp/out_re.txt')],
+                            works_writer=[StandardFileREWorksStatisticsWriter('/tmp/')])
     master = ExchangeMaster('master0', replica_names, params, comm=comm, 
                             sampling_statistics=stats, swap_statistics=re_stats)
 
-    master.run(5000, swap_interval=5, status_interval=100, dump_interval=100000, 
+    master.run(5,#15000,
+               swap_interval=5, status_interval=100, dump_interval=100000, 
                samples_folder='/baycells/scratch/carstens/test/', dump_step=1)
     master.terminate_replicas()
     
@@ -82,15 +89,15 @@ else:
 
     from rexfw.test.pdfs import MyNormal
     
-    proposer = REProposer('prop{}'.format(rank), comm)
+    # proposer = REProposer('prop{}'.format(rank))
 
-    # proposer = MDRENSProposer(proposer_names[rank-1], comm)
+    # proposer = MDRENSProposer(proposer_names[rank-1])
     
-    # proposer = LMDRENSProposer(proposer_names[rank-1], comm)
+    proposer = LMDRENSProposer(proposer_names[rank-1])
 
-    # proposer = HMCStepRENSProposer(proposer_names[rank-1], comm)
+    # proposer = HMCStepRENSProposer(proposer_names[rank-1])
 
-    # proposer = AMDRENSProposer(proposer_names[rank-1], comm)
+    # proposer = AMDRENSProposer(proposer_names[rank-1])
 
     proposers = {proposer.name: proposer}
 
@@ -98,7 +105,7 @@ else:
     hmc_trajectory_length = 20
 
     pdf = MyNormal(sigma=sigmas[rank-1])
-    replica = Replica(replica_names[rank-1], State(numpy.array([2.0 + 0*float(rank)])), 
+    replica = Replica(replica_names[rank-1], State(numpy.array([float(rank)])), 
                       pdf, {}, CompatibleRWMCSampler,
                       {'stepsize': 0.7},
                        proposers, comm)

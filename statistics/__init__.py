@@ -20,18 +20,11 @@ class FilterableQuantityList(list):
         
 class Statistics(object):
 
-    _elements = FilterableQuantityList()
-
     def __init__(self, name, elements, stats_writer=None):
 
         self.name = name
-        self._stats_writer = ConsoleStatisticsWriter if stats_writer is None else stats_writer
+        self._stats_writer = [ConsoleStatisticsWriter] if stats_writer is None else stats_writer
         self._elements = FilterableQuantityList(elements)
-
-    def initialize(self, replica_names):
-
-        self._n_replicas = len(replica_names)
-        self._replica_names = replica_names
         
     def update(self, step, name, origins, value):
 
@@ -42,12 +35,33 @@ class Statistics(object):
     def write_last(self, step):
 
         for writer in self._stats_writer:
-            writer.write(step, FilterableQuantityList(self.elements))
+            writer.write(step, self.elements)
 
     @property
     def elements(self):
         return self._elements
 
+
+class REStatistics(Statistics):
+
+    def __init__(self, elements, work_elements, name='REStats0', stats_writer=None, works_writer=None):
+
+        super(REStatistics, self).__init__(name, elements + work_elements, stats_writer)
+
+        self._work_elements = FilterableQuantityList(work_elements)
+        self._works_writer = works_writer
+        
+    def write_last(self, step):
+
+        super(REStatistics, self).write_last(step)
+        
+        self._write_works()
+
+    def _write_works(self):
+
+        for writer in self._works_writer:
+            writer.write(self._work_elements)    
+    
 
 class SRSamplingStatistics(Statistics):
 
@@ -92,6 +106,6 @@ class MCMCSamplingStatistics(SRSamplingStatistics):
 
     def _create_data_from_sample_stats(self, sampler, stats):
 
-        return [('stepsize', {sampler}, stats.stepsize),
-                ('mcmc_accepted', {sampler}, stats.accepted),
-                ('mcmc_p_acc', {sampler}, stats.accepted)]
+        return [('stepsize', [sampler], stats.stepsize),
+                ('mcmc_accepted', [sampler], stats.accepted),
+                ('mcmc_p_acc', [sampler], stats.accepted)]
