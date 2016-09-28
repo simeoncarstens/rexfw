@@ -140,7 +140,7 @@ class StandardFileMCMCStatisticsWriter(AbstractFileStatisticsWriter):
         super(StandardFileMCMCStatisticsWriter, self).__init__(filename, fields_to_write)
 
         self._separator = '\t'
-        self._fields_to_write = ['mcmc_p_acc']
+        self._fields_to_write = ['mcmc_p_acc', 'stepsize']
     
     def _format(self, quantity):
 
@@ -208,4 +208,20 @@ class StandardFileREWorksStatisticsWriter(object):
         
         for e in elements:
             with open(self._outfolder + 'works_{}-{}.pickle'.format(*e.origins), 'w') as opf:
+                dump(e.values, opf)
+
+
+class StandardFileREHeatsStatisticsWriter(object):
+
+    def __init__(self, outfolder):
+
+        self._outfolder = outfolder
+        self._fields_to_write = ['re_heats']
+
+    def write(self, elements):
+
+        from cPickle import dump
+        
+        for e in elements:
+            with open(self._outfolder + 'heats_{}-{}.pickle'.format(*e.origins), 'w') as opf:
                 dump(e.values, opf)

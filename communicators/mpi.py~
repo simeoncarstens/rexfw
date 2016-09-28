@@ -1,0 +1,20 @@
+'''
+'''
+
+from rexfw.communicators import AbstractCommunicator
+
+class MPICommunicator(AbstractCommunicator):
+
+    comm = MPI.COMM_WORLD
+
+    def send(self, obj, dest):
+        if not self.whatsnext == "send":
+            raise ValueError("Communicator expecting to {0} instead of {1}".format(self.whatsnext,
+                                                                                   "send"))
+        self.comm.send(obj, dest=dest)
+
+    def recv(self, source):
+        if not self.whatsnext == "send":
+            raise ValueError("Communicator expecting to {0} instead of {1}".format(self.whatsnext,
+                                                                                   "receive"))
+        return self.comm.recv(source=source)

@@ -1,0 +1,12 @@
+'''
+Requests masters can send
+'''
+
+from collections import namedtuple
+
+
+SampleRequest = namedtuple('SampleRequest', 'sender minion')
+
+class DieRequest(object):
+    pass
+

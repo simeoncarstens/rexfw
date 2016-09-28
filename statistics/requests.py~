@@ -1,0 +1,6 @@
+'''
+Requests statistics can send
+'''
+
+from collections import namedtuple
+

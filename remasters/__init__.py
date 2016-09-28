@@ -42,11 +42,11 @@ class ExchangeMaster(object):
     def _perform_exchanges(self, swap_list):
         
         self._trigger_proposal_calculation(swap_list)
-        works = self._receive_works(swap_list)
+        works, heats = self._receive_works(swap_list)
         acc = self._calculate_acceptance(works)
         self._trigger_exchanges(swap_list, acc)
 
-        return zip(acc, works)
+        return zip(acc, works, heats)
 
     def _trigger_proposal_calculation(self, swap_list):
 
@@ -69,11 +69,16 @@ class ExchangeMaster(object):
     def _receive_works(self, swap_list):
 
         works = numpy.zeros((len(swap_list), 2))
+        heats = numpy.zeros((len(swap_list), 2))
         for i, (r1, r2, params) in enumerate(swap_list):
-            works[i][0] = self._comm.recv(source=r1).data
-            works[i][1] = self._comm.recv(source=r2).data
+            data_r1 = self._comm.recv(source=r1).data
+            data_r2 = self._comm.recv(source=r2).data
+            works[i][0] = data_r1[0]
+            works[i][1] = data_r2[0]
+            heats[i][0] = data_r1[1]
+            heats[i][1] = data_r2[1]
             
-        return works
+        return works, heats
 
     def _calculate_acceptance(self, works):
 
@@ -104,6 +109,7 @@ class ExchangeMaster(object):
             self.swap_statistics.update(step, 're_p_acc', [r1, r2], results[j][0])
             self.swap_statistics.update(step, 're_accepted', [r1, r2], results[j][0])
             self.swap_statistics.update(step, 're_works', [r1, r2], results[j][1])
+            self.swap_statistics.update(step, 're_heats', [r1, r2], results[j][2])
                 
     def _calculate_swap_list(self, i):
 

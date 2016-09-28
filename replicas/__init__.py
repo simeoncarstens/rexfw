@@ -133,14 +133,14 @@ class Replica(object):
         self._current_master = request.sender
 
         proposer = list(set(self.proposers.keys()).intersection(set(params.proposers)))[-1]
+        self.proposers[proposer].partner_name = partner_name
         proposal = self.proposers[proposer].propose(self, 
                                                     self._buffered_partner_state,
                                                     self._buffered_partner_energy,
                                                     proposer_params)
-
-        # print "pos:", proposal[-1].position
         
-        self._comm.send(Parcel(self.name, self._current_master, float(proposal.work)), self._current_master)
+        self._comm.send(Parcel(self.name, self._current_master, (float(proposal.work), float(proposal.heat))), 
+                        self._current_master)
         self._buffered_proposal = proposal[-1]
 
     def _accept_buffered_proposal(self, request):

@@ -1,0 +1,33 @@
+'''
+Classes representing runtime-averages of quantities such as acceptance rates
+'''
+
+
+class AbstractAverage(object):
+
+    _field_name = None
+    
+    def __init__(self):
+
+        self._n_contributions = 0
+        self._value = None
+        self._step = None
+
+    def update(self, step, new_value):
+
+        if self._value is None:
+            self._value = new_value
+            self._n_contributions += 1
+        else:
+            self._value *= self._n_contributions / float(self._n_contributions + 1)
+            self._n_contributions += 1
+            self._value += new_value / float(self._n_contributions)
+
+    @property
+    def field_name(self):
+
+        return self._field_name
+    
+class AcceptanceRateAverage(AbstractAverage):
+
+    _field_name = 'p_acc'

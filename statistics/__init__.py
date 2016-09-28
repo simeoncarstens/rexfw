@@ -44,25 +44,35 @@ class Statistics(object):
 
 class REStatistics(Statistics):
 
-    def __init__(self, elements, work_elements, name='REStats0', stats_writer=None, works_writer=None):
+    def __init__(self, elements, work_elements, heat_elements, 
+                 name='REStats0', stats_writer=None, 
+                 works_writer=None, heats_writer=None):
 
-        super(REStatistics, self).__init__(name, elements + work_elements, stats_writer)
+        super(REStatistics, self).__init__(name, elements + work_elements + heat_elements, stats_writer)
 
         self._work_elements = FilterableQuantityList(work_elements)
+        self._heat_elements = FilterableQuantityList(heat_elements)
         self._works_writer = works_writer
+        self._heats_writer = heats_writer
         
     def write_last(self, step):
 
         super(REStatistics, self).write_last(step)
         
         self._write_works()
+        self._write_heats()
 
     def _write_works(self):
 
         for writer in self._works_writer:
             writer.write(self._work_elements)    
-    
 
+    def _write_heats(self):
+
+        for writer in self._heats_writer:
+            writer.write(self._heat_elements)    
+
+            
 class SRSamplingStatistics(Statistics):
 
     def __init__(self, name, comm, elements, stats_writer=None):

@@ -1,0 +1,63 @@
+'''
+Statistics classes responsible for tracking sampling statistics
+'''
+
+from ABCMeta import abcmeta, abstractmethod, abstractproperty
+
+
+class AbstractStatistics(object):
+
+    _averages = []
+    _elements = []
+
+    def __init__(self, comm, averages=[], stats_writer=None):
+
+        self._comm = comm
+        self._stats_writer = stats_writer
+
+        for avg in averages:
+            self._averages.append(avg)
+
+    def update(self, element):
+
+        self._elements.append(element)
+
+    def _update_averages(self, step, info):
+
+        for avg in self._averages:
+            if avg.field_name in info:
+                avg.update(step, info[avg.field_name])
+
+    def write(self, elements=None, fields=None):
+
+        self._stats_writer.write(self._elements[elements], fields)
+
+    @property
+    def averages(self):
+
+        return self._averages
+
+    @property
+    def elements(self):
+
+        return self._elements
+
+
+class AbstractSamplingStatistics(AbstractStatistics):
+
+    def receive_sample_stats(self, step, senders=None):
+
+        senders = xrange(self._n_replicas) if senders == None else senders
+        results = {'step': step}
+        
+        for i in senders:
+            results.update(**{'sampler{}'.format(i): self.comm.recv(source=self.id_offset+i)})
+
+        self._elements.append(results)
+
+class AbstractREStatistics(AbstractStatistics):
+
+    def update_swap_stats(self, step, info):
+
+        self._elements.append({'step': step})
+        self._elements[-1].update(**info)

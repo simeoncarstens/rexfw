@@ -94,27 +94,31 @@ class AbstractRENSProposer(AbstractProposer):
 
         self._interpolating_pdf = interpolating_pdf
         
-    def propose(self, local_replica, partner_state, partner_energy, params):
-
-        n_steps = params.n_steps
-        timestep = params.timestep
-
-        from cPickle import load
+    def _pdf_factory(self, local_replica, params):
 
         if self._interpolating_pdf.__name__ ==  'OldISDInterpolatingPDF':
             pdf = self._interpolating_pdf(local_replica.pdf, params, self.posterior)
         else:
             pdf = self._interpolating_pdf(local_replica.pdf, params)
-        propagator = self._propagator_factory(pdf, params)
-        
-        ps_pos = partner_state.position
-        traj = propagator.generate(State(ps_pos, numpy.random.normal(size=ps_pos.shape)), n_steps)
-        
+
+        return pdf
+
+    def _calculate_work(self, local_replica, partner_energy, traj):
+
         E_remote = partner_energy
         E_local = -local_replica.pdf.log_prob(traj.final.position)
         
-        traj.work = (E_local - E_remote) + 0.5 * numpy.sum(traj.final.momentum ** 2) - 0.5 * numpy.sum(traj.initial.momentum ** 2) - traj.heat
+        return (E_local - E_remote) + 0.5 * numpy.sum(traj.final.momentum ** 2) - 0.5 * numpy.sum(traj.initial.momentum ** 2) - traj.heat        
         
+    def propose(self, local_replica, partner_state, partner_energy, params):
+
+        pdf = self._pdf_factory(local_replica, params)
+        propagator = self._propagator_factory(pdf, params)
+        
+        ps_pos = partner_state.position
+        traj = propagator.generate(State(ps_pos, numpy.random.normal(size=ps_pos.shape)), params.n_steps)
+        traj.work = self._calculate_work(local_replica, partner_energy, traj)
+
         traj = GeneralTrajectory([traj.initial, traj.final], work=traj.work, heat=traj.heat)
 
         return traj

@@ -1,0 +1,217 @@
+'''
+Master classes implementing exchange criteria for RE and derived algorithms
+'''
+
+from rexfw.remasters.requests import SampleRequest, DieRequest
+
+
+class ReplicaExchangeMaster(object):
+
+    # __metaclass__ = ABCMeta
+    
+    def __init__(self, n_replicas, statistics, comm, id_offset=1):
+
+        self._n_replicas = n_replicas
+        self._comm = comm
+        self.id_offset = id_offset
+
+    # def _trigger_exchanges(self, swap_list):
+
+    #     self._send_exchange_requests(swap_list)
+    #     results = self._receive_exchange_results(swap_list)
+    #     return results
+
+    # def _calculate_swap_list(self, i):
+    #     '''
+    #     This can be modified to implement, e.g., Yannick's convective RE
+    #     '''
+
+    #     swap_list = range(self._n_replicas - 1)[self.exchange_counter % 2 != 0::2]
+    #     if len(swap_list) == 0:
+    #         swap_list.append(0)
+        
+    #     return swap_list
+
+    def _trigger_normal_sampling(self):
+
+        self._send_sample_requests()
+        # stats = self._receive_sample_stats()
+        # self._update_sampler_stats(stats)
+
+    # def _send_border_replica_sample_requests(self, swap_list):
+
+    #     if len(swap_list) > 0:
+    #         sampling = []
+    #         if not 0 in swap_list:
+    #             sampling.append(0)
+    #             self._send_sample_requests(targets=[0])
+    #         if not self._n_replicas - 2 in swap_list and self._n_replicas - 2 != 0:
+    #             sampling.append(self._n_replicas - 1)
+    #             self._send_sample_requests(targets=[self._n_replicas - 1])
+
+    #         stats = self._receive_sample_stats(sampling)
+    #         self._update_sampler_stats(stats)
+
+    # def _print_stats(self, i, status_interval):
+
+    #     if i % status_interval == 0 and i > 0:
+    #         print "############# MC step #"+str(i)+" ################"
+    #         self._print_swap_stats()
+    #         self._print_sampler_stats()
+
+    # def _print_swap_stats(self):
+
+    #     print "RE acceptance rates:",
+    #     for y in ["%.2f" % x for x in self.swap_acceptance_rates]:
+    #         print y,
+    #     print
+
+    # @abstractmethod
+    # def _print_sampler_stats(self):
+    #     '''
+    #     Depends on what sampler is being used in the replicas
+    #     '''
+    #     pass
+
+    # def _write_sampler_stats_header(self):
+    #     pass
+
+    # def _dump_sampler_stats(self, i, status_interval, samples_folder):
+    #     '''
+    #     TODO: put all the statistics stuff in an object StatisticsPrinter / Dumper
+    #     '''
+        
+    #     if i % status_interval == 0:
+            
+    #         import os
+    #         from csv import DictWriter, writer
+            
+    #         self._send_sampler_stats_requests()
+    #         allstats = self._receive_sampler_stats()
+    #         for j, stats in enumerate(allstats):
+    #             if i == 0:
+    #                 os.system('mkdir '+ samples_folder + 'sampling_statistics/')
+    #             with open(samples_folder + '/sampling_statistics/sampler{}.txt'.format(j),'a') as opf:
+    #                 stats_writer = DictWriter(opf, fieldnames=['MC sample'] + sorted(stats.keys()), delimiter='\t')
+    #                 if i == 0:
+    #                     stats_writer.writeheader()
+    #                 stats.update(**{'MC sample': i})
+    #                 stats_writer.writerow(stats)
+    #         with open(samples_folder + '/sampling_statistics/re_acceptance_rates.txt', 'a') as opf:
+    #             re_fields = ['{}<->{}'.format(k, k+1) for k in xrange(len(allstats) - 1)]
+    #             stats_writer = DictWriter(opf, fieldnames=['MC sample'] + re_fields,
+    #                                       delimiter='\t')
+    #             if i == 0:
+    #                 stats_writer.writeheader()
+    #             re_stats = {field: x for (field, x) in zip(re_fields, self.swap_acceptance_rates)}
+    #             re_stats.update(**{'MC sample': i})
+    #             stats_writer.writerow(re_stats)
+        
+    # def _dump_stats(self, i, dump_interval, samples_folder, dump_step=1):
+
+    #     if i % dump_interval == 0 and i > 0:
+    #         self._send_dump_samples_request(samples_folder, i - dump_interval, i, dump_step)                
+            
+    def run(self, n_iterations, swap_interval=5, status_interval=100, samples_folder=None, 
+            dump_interval=250, dump_step=5):
+
+        for i in xrange(n_iterations):
+            if i % swap_interval == 0 and i > 0:
+                # swap_list = self._calculate_swap_list(i)
+                # results = self._trigger_exchanges(swap_list)
+                # # self.statistics.update
+                # self._update_stats(results)
+                # self._send_border_replica_sample_requests(swap_list)
+                pass
+            else:
+                self._trigger_normal_sampling()
+
+            # self._print_stats(i, status_interval)
+            # self._dump_sampler_stats(i, status_interval, samples_folder)
+            # self._dump_stats(i, dump_interval, samples_folder, dump_step)
+
+    # def _update_sampler_stats(self, results):
+
+    #     for r in results:
+    #         self._sampler_statistics[r.sender - 1].append(r.last_draw_stats)
+    
+    # def _update_stats(self, results):
+
+    #     for r in results:
+    #         self._swap_statistics[r.sender - 1][0] += 1
+    #         self._swap_statistics[r.sender - 1][1] += r.accepted
+        
+    #     self.exchange_counter += 1
+
+    # @property
+    # def swap_acceptance_rates(self):
+    #     return [float(x[1]) / x[0] if x[0] != 0 else 0.0 for x in self._swap_statistics]
+
+    def _send_sample_requests(self, targets=None):
+
+        recipients = xrange(self._n_replicas) if targets is None else targets
+
+        for r in recipients:
+            self._comm.send(SampleRequest(self.id_offset, minion='replica{}'.format(r+1)), 
+                            dest=self.id_offset + r)
+
+    # def _send_exchange_requests(self, swap_list):
+        
+    #     for i in swap_list:
+    #         self._comm.send(ExchangeRequest(self.id_offset+i+1, 'MPISimpleReplicaExchanger'), 
+    #                        dest=self.id_offset+i)
+
+    # def _send_dump_samples_request(self, samples_folder, smin, smax, dump_step):
+
+    #     for i in xrange(self._n_replicas):
+    #         self._comm.send(DumpSamplesRequest(samples_folder, smin, smax, dump_step),
+    #                        dest=self.id_offset+i)
+
+    # def _receive_exchange_results(self, swap_list):
+
+    #     return [self._comm.recv(source=self.id_offset+i) for i in swap_list]
+
+    # def _receive_sample_stats(self, senders=None):
+
+    #     senders = xrange(self._n_replicas) if senders == None else senders
+    #     results = []
+
+    #     for i in senders:
+    #         results.append(self._comm.recv(source=self.id_offset+i))
+
+    #     return results
+        
+    def terminate_replicas(self):
+
+        for r in xrange(self._n_replicas):
+            self._comm.send(DieRequest(), dest=self.id_offset+r)
+
+    # def get_samples(self):
+
+    #     samples = []
+
+    #     for r in xrange(self._n_replicas):
+    #         self._comm.send(GetSampleListRequest(), dest=self.id_offset+r)
+    #         samples.append(self._comm.recv(source=self.id_offset+r))
+
+    #     return samples
+
+    # def get_replica_state(self, id):
+
+    #     self._comm.send(GetStateRequest(self.id_offset - 1), dest=self.id_offset + id)
+    #     res = self._comm.recv(source=self.id_offset + id)
+
+    #     return res
+
+    # def get_current_state(self):
+
+    #     return EnsembleState([self.get_replica_state(i) for i in xrange(self._n_replicas)])
+
+    # def _send_sampler_stats_requests(self):
+
+    #     for r in xrange(self._n_replicas):
+    #         self._comm.send(SamplerStatsRequest(), dest=self.id_offset+r)
+
+    # def _receive_sampler_stats(self):
+
+    #     return [self._comm.recv(source=self.id_offset+r) for r in xrange(self._n_replicas)]
