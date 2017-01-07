@@ -130,7 +130,7 @@ class ExchangeMaster(object):
         os.system('mkdir '+samples_folder+'statistics/')
 
         for step in xrange(n_iterations):
-            if step % swap_interval == 0:# and step > 0:
+            if step % swap_interval == 0 and step > 0:
                 swap_list = self._calculate_swap_list(step)
                 results = self._perform_exchanges(swap_list)
                 self._update_swap_stats(swap_list, results, step)

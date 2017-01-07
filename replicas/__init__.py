@@ -167,4 +167,7 @@ class Replica(object):
         
     def get_energy(self, state):
 
-        return -self.pdf.log_prob(state.position)
+        if 'position' in dir(state):
+            return -self.pdf.log_prob(state.position)
+        else:
+            return -self.pdf.log_prob(state)

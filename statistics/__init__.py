@@ -20,10 +20,10 @@ class FilterableQuantityList(list):
         
 class Statistics(object):
 
-    def __init__(self, name, elements, stats_writer=None):
+    def __init__(self, name, elements, stats_writer=[]):
 
         self.name = name
-        self._stats_writer = [ConsoleStatisticsWriter] if stats_writer is None else stats_writer
+        self._stats_writer = [ConsoleStatisticsWriter] if len(stats_writer) == 0  else stats_writer
         self._elements = FilterableQuantityList(elements)
         
     def update(self, step, name, origins, value):
@@ -45,8 +45,8 @@ class Statistics(object):
 class REStatistics(Statistics):
 
     def __init__(self, elements, work_elements, heat_elements, 
-                 name='REStats0', stats_writer=None, 
-                 works_writer=None, heats_writer=None):
+                 name='REStats0', stats_writer=[], 
+                 works_writer=[], heats_writer=[]):
 
         super(REStatistics, self).__init__(name, elements + work_elements + heat_elements, stats_writer)
 
