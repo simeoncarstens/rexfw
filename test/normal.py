@@ -21,16 +21,22 @@ os.system('mkdir '+statspath)
 workspath = outpath + 'works/'
 os.system('mkdir '+workspath)
 
+## communicators are classes which serve as an interface between, say, MPI and the rexfw code
+## other communicators could use, e.g., the Python multiprocessing module
 comm = MPICommunicator()
 
+## many objects have names to identify them when forwarding messages coming in from the communicators
 replica_names = ['replica{}'.format(i) for i in range(1, size)]
 proposer_names = ['prop{}'.format(i) for i in range(1, size)]
 
 if rank == 0:
 
+    ## the first process (rank 0) runs an ExchangeMaster, which sends out commands / requests to the rpelica processes, such as "sample", "propose exchange states", "accept proposal", etc.
     from rexfw.remasters import ExchangeMaster
+    ## I tried to implement general logging / sampling statistics capabilities. This has become pretty blown-up
     from rexfw.statistics import MCMCSamplingStatistics, REStatistics
     from rexfw.statistics.writers import StandardConsoleMCMCStatisticsWriter, StandardConsoleREStatisticsWriter, StandardFileMCMCStatisticsWriter, StandardFileREStatisticsWriter, StandardFileREWorksStatisticsWriter
+    ## in .convenience I have functions which create default parameters
     from rexfw.convenience.statistics import create_standard_averages, create_standard_works, create_standard_stepsizes
 
     params = create_standard_RE_params(n_replicas)
@@ -57,10 +63,14 @@ else:
 
     from csb.statistics.samplers import State
     from csb.statistics.pdf import Normal
-    
+
+    ## every process with rank > 0 runs a replica, which does single-chain sampling and proposes exchange states
     from rexfw.replicas import Replica
+    ## the slaves are relicts; originally I thought them to pass on messages from communicators to proposers / replicas, but now the replicas take care of everything themselves
     from rexfw.slaves import Slave
+    ## this is mostly my CSB HMC sampler with a few extra functions for compatibility with rexfw
     from rexfw.samplers.hmc import CompatibleHMCSampler
+    ## every kind of RE / RENS has its own proposer classes which calculate proposal states
     from rexfw.proposers import REProposer
     
     proposer = REProposer('prop{}'.format(rank))
