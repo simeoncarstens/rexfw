@@ -139,8 +139,9 @@ class Replica(object):
                                                     self._buffered_partner_energy,
                                                     proposer_params)
         
-        self._comm.send(Parcel(self.name, self._current_master, (float(proposal.work), float(proposal.heat))), 
-                        self._current_master)
+        self._comm.send(Parcel(self.name, self._current_master, 
+                               (float(proposal.work), float(proposal.heat))), 
+                               self._current_master)
         self._buffered_proposal = proposal[-1]
 
     def _accept_buffered_proposal(self, request):
@@ -151,7 +152,8 @@ class Replica(object):
             self.state = self._buffered_proposal
         self.samples.append(deepcopy(self.state))
         from rexfw.replicas.requests import DoNothingRequest
-        self._comm.send(Parcel(self.name, self._current_master, DoNothingRequest(self.name)), self._current_master)
+        self._comm.send(Parcel(self.name, self._current_master, DoNothingRequest(self.name)), 
+                        self._current_master)
         
     def _send_energy(self, request):
 
