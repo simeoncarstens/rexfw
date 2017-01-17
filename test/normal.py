@@ -104,7 +104,7 @@ else:
     replica = Replica(name=replica_names[rank-1], 
                       state=init_state, 
                       pdf=pdf,
-                      pdf_params = {}
+                      pdf_params={},
                       sampler_class=CompatibleHMCSampler,
                       sampler_params={'timestep': hmc_timestep,
                                       'adapt_timestep': True,
