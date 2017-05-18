@@ -62,7 +62,7 @@ class StandardConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
     def __init__(self):
 
         super(StandardConsoleMCMCStatisticsWriter, self).__init__(['mcmc_p_acc', 'stepsize'])
-    
+        
     def _format(self, quantity):
 
         if quantity.name == 'mcmc_p_acc':
@@ -94,7 +94,7 @@ class StandardConsoleREStatisticsWriter(ConsoleStatisticsWriter):
     def _format(self, quantity):
 
         if quantity.name == 're_p_acc':
-            return '{: >.3f}   '.format(quantity.current_value)
+            return '{: >.2f}   '.format(quantity.current_value)
 
     def _write_quantity_class_header(self, class_name):
 
