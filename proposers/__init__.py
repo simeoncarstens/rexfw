@@ -317,33 +317,6 @@ class HMCStepRENSProposer(AbstractRENSProposer):
 
         interp_pdf = pdf
                 
-        # class P(object):
-        #     def log_prob(self, x, i):
-        #         i=float(i)
-        #         old = pdf['sigma']
-        #         pdf['sigma'] = params.pdf_params['sigma'][0]
-        #         a = pdf.log_prob(x)
-        #         pdf['sigma'] = params.pdf_params['sigma'][-1]
-        #         b = pdf.log_prob(x)
-        #         pdf['sigma']=old
-
-        #         return i / float(n_steps) * b + (1.0 - i / float(n_steps)) * a
-            
-        #     def gradient(self, x, i):
-
-        #         l = i / float(n_steps)
-                
-        #         l=float(l)
-        #         # print l
-        #         old = pdf['sigma']
-        #         pdf['sigma'] = params.pdf_params['sigma'][0]
-        #         a = pdf.gradient(x)
-        #         pdf['sigma'] = params.pdf_params['sigma'][-1]
-        #         b = pdf.gradient(x)
-        #         pdf['sigma']=old
-
-        #         return l * b + (1.0 - l) * a
-        
         im_log_probs = [lambda x, i=i: interp_pdf.log_prob(x, i) 
                         for i in range(n_steps + 1)]
 
