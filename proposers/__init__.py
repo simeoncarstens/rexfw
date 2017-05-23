@@ -47,44 +47,67 @@ class REProposer(AbstractProposer):
 
 class ParamInterpolationPDF(object):
 
-    def __init__(self, pdf, params):
+    def __init__(self, pdf, pdf_params, n_steps):
 
         self.pdf = pdf
-        n_steps = params.n_steps
-        dt = params.timestep
-        pdf_params = params.pdf_params
-        l = lambda t: t / (n_steps * dt)
-        self.interp_params = lambda t: {name: (  1.0 - l(t)) * pdf_params[name][0] 
-                                               + l(t) * pdf_params[name][1] 
-                                               for name in pdf_params.iterkeys()}
+        self.n_steps = n_steps
+        l = lambda i: i / float(n_steps)
+        self.interp_params = lambda i: {name: (  1.0 - l(i)) * pdf_params[name][0] 
+                                                 + l(i) * pdf_params[name][1] 
+                                        for name in pdf_params.iterkeys()}
 
-    def log_prob(self, x, t):
+    def _change_pdf_params(self, i):
 
-        old_values = {}
-        for name, value in self.interp_params(t).iteritems():
-            old_values.update(**{name: self.pdf[name]})
+        self._old_param_values = {}
+        for name, value in self.interp_params(i).iteritems():
+            self._old_param_values.update(**{name: self.pdf[name]})
             self.pdf[name] = value
 
+    def _reset_pdf_params(self):
+        
+        for name, value in self._old_param_values.iteritems():
+            self.pdf[name] = value
+
+    def log_prob(self, x, i):
+
+        self._change_pdf_params(i)
         res = self.pdf.log_prob(x)
-
-        for name, value in old_values.iteritems():
-            self.pdf[name] = value
+        self._reset_pdf_params()
             
         return res
+
+    def gradient(self, x, i):
+
+        self._change_pdf_params(i)
+        res = self.pdf.gradient(x)
+        self._reset_pdf_params()
+        
+        return res
+    
+
+class MDParamInterpolationPDF(ParamInterpolationPDF):
+
+    def __init__(self, pdf, pdf_params, n_steps, timestep):
+
+        super(MDParamInterpolationPDF, self).__init__(pdf, pdf_params, n_steps)
+
+        self.timestep = timestep
+
+    def _map_time_to_step(self, t):
+
+        return int(t / (float(self.n_steps) * self.timestep))
+        
+    def log_prob(self, x, t):
+
+        i = self._map_time_to_step(t)
+        
+        return super(MDParamInterpolationPDF, self).log_prob(x, i)
 
     def gradient(self, x, t):
 
-        old_values = {}
-        for name, value in self.interp_params(t).iteritems():
-            old_values.update(**{name: self.pdf[name]})
-            self.pdf[name] = value
-
-        res = self.pdf.gradient(x)
-
-        for name, value in old_values.iteritems():
-            self.pdf[name] = value
-            
-        return res
+        i = int(t / (float(self.n_steps) * self.timestep))
+        
+        return super(MDParamInterpolationPDF, self).gradient(x, i)
 
 
 class AbstractRENSProposer(AbstractProposer):
@@ -205,10 +228,7 @@ class AbstractStepRENSProposer(AbstractRENSProposer):
 
     def _setup_interp_pdf(self, n_steps, pdf_params):
 
-        TempParams = namedtuple('TempParams', 'n_steps timestep pdf_params')
-        p = TempParams(n_steps, 1.0, pdf_params)
-
-        pdf = self._interpolating_pdf(pdf, p)
+        pdf = self._interpolating_pdf(pdf, pdf_params, n_steps)
 
         return pdf
         
@@ -223,14 +243,12 @@ class AbstractStepRENSProposer(AbstractRENSProposer):
         fake_timestep = params.timestep
         n_steps = params.n_steps
 
-
         interp_pdf = self._setup_interp_pdf(n_steps, params.pdf_params)
                 
         im_sys_infos = self._setup_sys_infos(interp_pdf, n_steps)
 
         perturbations = [noneqprops.ReducedHamiltonianPerturbation(im_sys_infos[i], im_sys_infos[i+1])
                         for i in range(n_steps)]
-
 
         fake_params = FakeParams(timestep=params.timestep, 
                                  gradient=interp_pdf.gradient,
@@ -313,7 +331,7 @@ class HMCStepRENSProposer(AbstractRENSProposer):
             pdf = self._interpolating_pdf(pdf, p, self.posterior)
             print "loaded proprietary posterior"
         else:
-            pdf = self._interpolating_pdf(pdf, p)
+            pdf = self._interpolating_pdf(pdf, pdf_params, n_steps)
 
         interp_pdf = pdf
                 
