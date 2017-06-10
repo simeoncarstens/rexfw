@@ -44,9 +44,10 @@ class AbstractAverage(LoggedQuantity):
 
 class MCMCAcceptanceRateAverage(AbstractAverage):
 
-    def __init__(self, replica):
+    def __init__(self, replica, variable_name=None):
 
-        super(MCMCAcceptanceRateAverage, self).__init__('mcmc_p_acc')
+        name = 'mcmc_p_acc' if variable_name is None else '{}_mcmc_p_acc'.format(variable_name)
+        super(MCMCAcceptanceRateAverage, self).__init__(name)
 
         self.replica = replica
         self.origins.append(replica)

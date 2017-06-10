@@ -18,13 +18,14 @@ class AbstractStatisticsWriter(object):
 
         if which is None:
             which = self._fields_to_write
-
+        
         self._write_step_header(step)
         quantity_classes = {name: elements.select(name=name) for name in which}
+        
         for name, klass in quantity_classes.iteritems():
             sorted_quantities = self._sort_quantities(name, klass)
             self._write_quantity_class_header(name)
-            for q in sorted_quantities:    
+            for q in sorted_quantities:
                 self._outstream.write(self._format(q) + self._separator)
             self._outstream.write('\n')
 

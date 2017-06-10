@@ -32,16 +32,23 @@ class Replica(object):
         self._setup_pdf()
         self._setup_sampler()
 
+        self.energy_trace = []
+        self.ctr = 0
+
         ## Hack to ensure compatibility with ISD2 PDFs
-        from isd2.pdf import AbstractISDPDF
-        if isinstance(self.pdf, AbstractISDPDF):
-            from isd2.samplers.pdfwrapper import PDFWrapper
-            self.pdf = PDFWrapper(self.pdf)
+        self._wrap_pdf()
         
         self._process = None
 
         self._request_processing_table = {}
         self._setup_request_processing_table()
+
+    def _wrap_pdf(self):
+
+        from isd2.pdf import AbstractISDPDF
+        if isinstance(self.pdf, AbstractISDPDF):
+            from isd2.samplers.pdfwrapper import PDFWrapper
+            self.pdf = PDFWrapper(self.pdf)
 
     def _setup_request_processing_table(self):
 
@@ -104,6 +111,10 @@ class Replica(object):
         res = deepcopy(self._sampler.sample())
         self.state = res
         self.samples.append(deepcopy(res))
+
+        if self.ctr % 2 == 0:
+            self.energy_trace.append(self.energy)
+        self.ctr += 1
         
     def _send_stats(self, request):
 
@@ -119,6 +130,9 @@ class Replica(object):
         with open(filename, 'w') as opf:
             from cPickle import dump
             dump(self.samples[request.s_min:request.s_max:request.dump_step], opf, 2)
+
+        Es_folder = request.samples_folder[:-len('samples/')] + 'energies/'
+        numpy.save(Es_folder + self.name + '.npy', numpy.array(self.energy_trace))
     
     def process_request(self, request):
 
@@ -154,6 +168,8 @@ class Replica(object):
         from rexfw.replicas.requests import DoNothingRequest
         self._comm.send(Parcel(self.name, self._current_master, DoNothingRequest(self.name)), 
                         self._current_master)
+        self.energy_trace.append(self.energy)
+        self.ctr += 1
         
     def _send_energy(self, request):
 

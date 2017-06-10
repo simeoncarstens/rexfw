@@ -119,3 +119,16 @@ class MCMCSamplingStatistics(SRSamplingStatistics):
         return [('stepsize', [sampler], stats.stepsize),
                 ('mcmc_accepted', [sampler], stats.accepted),
                 ('mcmc_p_acc', [sampler], stats.accepted)]
+
+
+class GibbsSamplingStatistics(SRSamplingStatistics):
+
+    def __init__(self, comm, elements, name='MCMCStats0', stats_writer=None):
+
+        super(GibbsSamplingStatistics, self).__init__(name, comm, elements, stats_writer)
+
+    def _create_data_from_sample_stats(self, sampler, stats):
+        print stats
+        return [('{}_{}'.format(v, field), [sampler],
+                 eval('stats[v].{}'.format(field))) for v in stats.iterkeys()
+                                                for field in stats[v]._fields]

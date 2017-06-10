@@ -31,7 +31,7 @@ class LoggedQuantity(object):
         return self.values[next(reversed(self.values))] if len(self.values) > 0 else self._default_value
 
     def update(self, step, value):
-
+        print self, step, value
         self._values.update(**{str(step): value})
 
 
