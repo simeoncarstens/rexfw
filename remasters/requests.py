@@ -12,3 +12,4 @@ AcceptBufferedProposalRequest = namedtuple('AcceptBufferedProposalRequest', 'sen
 GetStateAndEnergyRequest_master = namedtuple('GetStateAndEnergyRequest_master', 'sender partner')
 SendGetStateAndEnergyRequest = namedtuple('SendGetStateAndEnergyRequest', 'sender partner')
 DumpSamplesRequest = namedtuple('DumpSamplesRequest', 'sender samples_folder s_min, s_max, dump_step')
+SendStatsRequest = namedtuple('SendStatsRequest', 'sender')

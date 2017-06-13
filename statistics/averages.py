@@ -11,9 +11,9 @@ class AbstractAverage(LoggedQuantity):
 
     __metaclass__ = ABCMeta
     
-    def __init__(self, name):
+    def __init__(self, origins, stats_fields, quantity_name, variable_name=None):
 
-        super(AbstractAverage, self).__init__(name)
+        super(AbstractAverage, self).__init__(origins, stats_fields, quantity_name, variable_name)
         self._n_contributions = 0
         self._untouched = True
 
@@ -21,60 +21,48 @@ class AbstractAverage(LoggedQuantity):
     def _calculate_new_value(self, info):
         pass
         
-    def update(self, step, value):
+    def update(self, step, stats):
 
-        new_value = self._calculate_new_value(value)
-
+        new_value = self._calculate_new_value(stats)
         if self._untouched:
             self._values.update(**{str(step): new_value})
             self._n_contributions += 1
             self._untouched = False
         else:
             new = self.current_value * self._n_contributions / float(self._n_contributions + 1)
-            # self.value *= self._n_contributions / float(self._n_contributions + 1)
             self._n_contributions += 1
-            # self.value += new_value / float(self._n_contributions)
             new += new_value / float(self._n_contributions)
             self._values.update(**{str(step): new})
-
-    # @abstractmethod
-    # def __repr__(self):
-    #     pass
 
 
 class MCMCAcceptanceRateAverage(AbstractAverage):
 
-    def __init__(self, replica, variable_name=None):
+    def __init__(self, replica, variable_name):
 
-        name = 'mcmc_p_acc' if variable_name is None else '{}_mcmc_p_acc'.format(variable_name)
-        super(MCMCAcceptanceRateAverage, self).__init__(name)
+        super(MCMCAcceptanceRateAverage, self).__init__([replica], ['accepted'], 
+                                                        'MCMC acceptance rate', variable_name)
 
-        self.replica = replica
-        self.origins.append(replica)
         self._default_value = 0.0
     
-    def _calculate_new_value(self, value):
-        return float(value)
+    def _calculate_new_value(self, stats):
+        return float(stats[self.variable_name].accepted)
 
     def __repr__(self):
 
-        return 'p_acc {}: {:.2f}'.format(self.replica, self.current_value)
+        return 'p_acc {}: {:.2f}'.format(self.origins[0], self.current_value)
 
     
 class REAcceptanceRateAverage(AbstractAverage):
 
     def __init__(self, replica1, replica2):
 
-        super(REAcceptanceRateAverage, self).__init__('re_p_acc')
+        super(REAcceptanceRateAverage, self).__init__([replica1, replica2], ['accepted'], 'RE acceptance rate')
 
-        self.replica1, self.replica2 = replica1, replica2
-        self.origins.append(replica1)
-        self.origins.append(replica2)
         self._default_value = 0.0
 
-    def _calculate_new_value(self, value):
-        return float(value)
+    def _calculate_new_value(self, stats):
+        return float(stats.accepted)
 
     def __repr__(self):
 
-        return 'p_acc {} <> {}: {:.2f}'.format(self.replica1, self.replica2, self.current_value)
+        return 'p_acc {} <> {}: {:.2f}'.format(self.origins[0], self.origins[1], self.current_value)

@@ -15,12 +15,15 @@ class AbstractStatisticsWriter(object):
         self._fields_to_write = fields_to_write
 
     def write(self, step, elements, which=None):
-
+        
         if which is None:
             which = self._fields_to_write
-        
+
+        print which
+            
         self._write_step_header(step)
-        quantity_classes = {name: elements.select(name=name) for name in which}
+        quantity_classes = {quantity_name: elements.select(quantity_name=quantity_name) 
+                            for quantity_name in which}
         
         for name, klass in quantity_classes.iteritems():
             sorted_quantities = self._sort_quantities(name, klass)
@@ -62,15 +65,16 @@ class StandardConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
 
     def __init__(self):
 
-        super(StandardConsoleMCMCStatisticsWriter, self).__init__(['mcmc_p_acc', 'stepsize'])
-        
+        # super(StandardConsoleMCMCStatisticsWriter, self).__init__(['mcmc_p_acc', 'stepsize'])
+        super(StandardConsoleMCMCStatisticsWriter, self).__init__([])
+    
     def _format(self, quantity):
 
         if quantity.name == 'mcmc_p_acc':
             return '{: >.3f}   '.format(quantity.current_value)
         if quantity.name == 'stepsize':
             return '{: <.2e}'.format(quantity.current_value)
-
+    
     def _write_step_header(self, step):
 
         self._outstream.write('######### MC step: {} #########\n'.format(step))
@@ -80,21 +84,22 @@ class StandardConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
         return sorted(quantity_class, key=lambda x: int(list(x.origins)[0][len('sampler_replica'):]))
     
     def _write_quantity_class_header(self, class_name):
+
         if class_name == 'mcmc_p_acc':
             self._outstream.write('MCMC    p_acc: ')
         if class_name == 'stepsize':
             self._outstream.write('MCMC stepsize: ')
 
-    
+            
 class StandardConsoleREStatisticsWriter(ConsoleStatisticsWriter):
 
     def __init__(self):
 
-        super(StandardConsoleREStatisticsWriter, self).__init__(['re_p_acc'])
+        super(StandardConsoleREStatisticsWriter, self).__init__(['RE acceptance rate'])
 
     def _format(self, quantity):
 
-        if quantity.name == 're_p_acc':
+        if quantity.quantity_name == 'RE acceptance rate':
             return '{: >.2f}   '.format(quantity.current_value)
 
     def _write_quantity_class_header(self, class_name):
@@ -168,7 +173,7 @@ class StandardFileREStatisticsWriter(AbstractFileStatisticsWriter):
 
     def __init__(self, filename, fields_to_write=None):
         
-        fields_to_write = ['re_p_acc'] if fields_to_write is None else fields_to_write
+        fields_to_write = ['RE acceptance rate'] if fields_to_write is None else fields_to_write
         
         super(StandardFileREStatisticsWriter, self).__init__(filename, fields_to_write)
 

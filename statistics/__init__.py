@@ -20,17 +20,21 @@ class FilterableQuantityList(list):
         
 class Statistics(object):
 
-    def __init__(self, name, elements, stats_writer=[]):
+    def __init__(self, elements, stats_writer=[]):
 
-        self.name = name
         self._stats_writer = [ConsoleStatisticsWriter] if len(stats_writer) == 0  else stats_writer
         self._elements = FilterableQuantityList(elements)
-        
-    def update(self, step, name, origins, value):
 
-        quantities = self.elements.select(origins=origins, name=name)
+    def update(self, origins, sampler_stats_list):
+        
+        for step, sampling_stats in sampler_stats_list:
+            self.update_single_step(origins, step, sampling_stats)
+        
+    def update_single_step(self, origins, step, sampling_stats):
+
+        quantities = self.elements.select(origins=origins)
         for quantity in quantities:
-            quantity.update(step, value)
+            quantity.update(step, sampling_stats)
 
     def write_last(self, step):
 
@@ -45,10 +49,9 @@ class Statistics(object):
 class REStatistics(Statistics):
 
     def __init__(self, elements, work_elements, heat_elements, 
-                 name='REStats0', stats_writer=[], 
-                 works_writer=[], heats_writer=[]):
+                 stats_writer=[], works_writer=[], heats_writer=[]):
 
-        super(REStatistics, self).__init__(name, elements + work_elements + heat_elements, stats_writer)
+        super(REStatistics, self).__init__(elements + work_elements + heat_elements, stats_writer)
 
         self._work_elements = FilterableQuantityList(work_elements)
         self._heat_elements = FilterableQuantityList(heat_elements)
@@ -74,45 +77,35 @@ class REStatistics(Statistics):
 
             
 class SRSamplingStatistics(Statistics):
-
-    def __init__(self, name, comm, elements, stats_writer=None):
-
-        super(SRSamplingStatistics, self).__init__(name, elements, stats_writer)
-
-        self._comm = comm
     
     def _init_averages(self, averages):
 
         self._averages = averages
 
-    def update(self, step, senders):
+    # def update(self, step, senders):
 
-        elements = self._get_sampling_stats(senders)
-        data = [self._create_data_from_sample_stats(sampler, stats) for sampler, stats in elements.iteritems()]
-        data = [y for z in data for y in z]
-        for d in data:
-            super(SRSamplingStatistics, self).update(step, *d)
+    #     elements = self._get_sampling_stats(senders)
+    #     data = [self._create_data_from_sample_stats(sampler, stats) for sampler, stats in elements.iteritems()]
+    #     data = [y for z in data for y in z]
+    #     for d in data:
+    #         super(SRSamplingStatistics, self).update(step, *d)
                         
-    def _get_sampling_stats(self, replicas):
+    # def _get_sampling_stats(self, replicas):
 
-        results = {}
+    #     results = {}
 
-        for r in replicas:
-            request = SendStatsRequest(self.name)
-            parcel = Parcel(self.name, r, request)
-            self._comm.send(parcel, r)
+    #     for r in replicas:
+    #         request = SendStatsRequest(self.name)
+    #         parcel = Parcel(self.name, r, request)
+    #         self._comm.send(parcel, r)
 
-        for r in replicas:
-            results.update(**{'sampler_{}'.format(r): self._comm.recv(source=r).data})
+    #     for r in replicas:
+    #         results.update(**{'sampler_{}'.format(r): self._comm.recv(source=r).data})
 
-        return results
+    #     return results
 
 
 class MCMCSamplingStatistics(SRSamplingStatistics):
-
-    def __init__(self, comm, elements, name='MCMCStats0', stats_writer=None):
-
-        super(MCMCSamplingStatistics, self).__init__(name, comm, elements, stats_writer)
 
     def _create_data_from_sample_stats(self, sampler, stats):
 
@@ -123,12 +116,17 @@ class MCMCSamplingStatistics(SRSamplingStatistics):
 
 class GibbsSamplingStatistics(SRSamplingStatistics):
 
-    def __init__(self, comm, elements, name='MCMCStats0', stats_writer=None):
+    pass
+    # def _create_data_from_sample_stats(self, sampler, stats):
 
-        super(GibbsSamplingStatistics, self).__init__(name, comm, elements, stats_writer)
+    #     # return [('structures_mcmc_p_acc', [sampler], stats['structures'].accepted),
+    #     #         ('weights_mcmc_p_acc', [sampler], stats['weights'].accepted)]
 
-    def _create_data_from_sample_stats(self, sampler, stats):
-        print stats
-        return [('{}_{}'.format(v, field), [sampler],
-                 eval('stats[v].{}'.format(field))) for v in stats.iterkeys()
-                                                for field in stats[v]._fields]
+    #     res = [('{}_{}'.format(v, field), [sampler],
+    #              eval('stats[v].{}'.format(field))) for v in stats.iterkeys()
+    #                                             for field in stats[v]._fields]
+
+    #     return [(x.name, [
+
+    #     # print res
+    #     return res

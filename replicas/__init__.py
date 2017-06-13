@@ -35,6 +35,8 @@ class Replica(object):
         self.energy_trace = []
         self.ctr = 0
 
+        self.sampler_stats = []
+
         ## Hack to ensure compatibility with ISD2 PDFs
         self._wrap_pdf()
         
@@ -55,7 +57,6 @@ class Replica(object):
         self._request_processing_table = dict(
             SampleRequest='self._sample({})',
             SendStatsRequest='self._send_stats({})',
-            SamplerStatsRequest='self._send_sampler_stats({})',
             ProposeRequest='self._propose({})',
             AcceptBufferedProposalRequest='self._accept_buffered_proposal({})',
             SendGetStateAndEnergyRequest='self._send_get_state_and_energy_request({})',
@@ -111,17 +112,21 @@ class Replica(object):
         res = deepcopy(self._sampler.sample())
         self.state = res
         self.samples.append(deepcopy(res))
+        self.sampler_stats.append([self.ctr, self._sampler.get_last_draw_stats()])
 
         if self.ctr % 2 == 0:
             self.energy_trace.append(self.energy)
-        self.ctr += 1
+        self.ctr += 1        
         
     def _send_stats(self, request):
 
-        parcel = Parcel(self.name, request.sender, self._sampler.get_last_draw_stats())
+        parcel = Parcel(self.name, request.sender, self.sampler_stats)
         self._comm.send(parcel, request.sender)
+        self.sampler_stats = []
 
     def _dump_samples(self, request):
+
+        import numpy
 
         filename = '{}samples_{}_{}-{}.pickle'.format(request.samples_folder, 
                                                       self.name, 
