@@ -7,14 +7,14 @@ from collections import OrderedDict
 
 class LoggedQuantity(object):
 
-    def __init__(self, origins, stats_fields, quantity_name, variable_name=None):
+    def __init__(self, origins, stats_fields, name, variable_name=None):
 
         self._values = OrderedDict()
         self._default_value = None
         self.step = None
         self.origins = origins
         self.stats_fields = stats_fields
-        self.quantity_name = quantity_name
+        self.name = name
         self.variable_name = variable_name
 
     def __getitem__(self, step):
@@ -48,7 +48,7 @@ class SamplerStepsize(LoggedQuantity):
     def __repr__(self):
 
         return '{} {} {}: {}'.format(self.origins[0], self.variable_name, 
-                                     self.quantity_name,self.current_value)
+                                     self.name,self.current_value)
         
 
 class MCMCMoveAccepted(LoggedQuantity):
@@ -65,7 +65,7 @@ class MCMCMoveAccepted(LoggedQuantity):
     def __repr__(self):
 
         return '{} {} {}: {}'.format(self.origins[0], self.variable_name, 
-                                     self.quantity_name,self.current_value)
+                                     self.name,self.current_value)
 
 
 class REMoveAccepted(LoggedQuantity):
@@ -82,7 +82,7 @@ class REMoveAccepted(LoggedQuantity):
     def __repr__(self):
 
         return '{} {} {}: {}'.format(self.origins[0], self.variable_name, 
-                                     self.quantity_name,self.current_value)
+                                     self.name,self.current_value)
 
 
 class REWorks(LoggedQuantity):
@@ -100,7 +100,7 @@ class REWorks(LoggedQuantity):
     
     def __repr__(self):
 
-        return '{} {} <> {}: {}'.format(self.quantity_name, self.origins[0], self.origins[1], 
+        return '{} {} <> {}: {}'.format(self.name, self.origins[0], self.origins[1], 
                                         self.current_value)
 
     
@@ -119,5 +119,5 @@ class REHeats(LoggedQuantity):
 
     def __repr__(self):
 
-        return '{} {} <> {}: {}'.format(self.quantity_name, self.origins[0], self.origins[1], 
+        return '{} {} <> {}: {}'.format(self.name, self.origins[0], self.origins[1], 
                                         self.current_value)

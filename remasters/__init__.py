@@ -52,11 +52,13 @@ class ExchangeMaster(object):
 
         for i, (r1, r2, params) in enumerate(swap_list):
             from time import sleep
-            self._comm.send(Parcel(self.name, r2, SendGetStateAndEnergyRequest(self.name, r1)), r2)
+            self._comm.send(Parcel(self.name, r2,
+                                   SendGetStateAndEnergyRequest(self.name, r1)), r2)
             ## Receives a None from r1 and r2; sent once buffered state / energies have been set
             ## this is to sync everything and really hacky
             self._comm.recv(source=r2)
-            self._comm.send(Parcel(self.name, r1, SendGetStateAndEnergyRequest(self.name, r2)), r1)
+            self._comm.send(Parcel(self.name, r1,
+                                   SendGetStateAndEnergyRequest(self.name, r2)), r1)
             ## Receives a None from r1 and r2; sent once buffered state / energies have been set
             ## this is to sync everything and really hacky
             self._comm.recv(source=r1)

@@ -11,9 +11,9 @@ class AbstractAverage(LoggedQuantity):
 
     __metaclass__ = ABCMeta
     
-    def __init__(self, origins, stats_fields, quantity_name, variable_name=None):
+    def __init__(self, origins, stats_fields, name, variable_name=None):
 
-        super(AbstractAverage, self).__init__(origins, stats_fields, quantity_name, variable_name)
+        super(AbstractAverage, self).__init__(origins, stats_fields, name, variable_name)
         self._n_contributions = 0
         self._untouched = True
 
@@ -39,24 +39,30 @@ class MCMCAcceptanceRateAverage(AbstractAverage):
 
     def __init__(self, replica, variable_name):
 
-        super(MCMCAcceptanceRateAverage, self).__init__([replica], ['accepted'], 
-                                                        'MCMC acceptance rate', variable_name)
+        super(MCMCAcceptanceRateAverage, self).__init__([replica],
+                                                        ['accepted'], 
+                                                        'acceptance rate',
+                                                        variable_name)
 
         self._default_value = 0.0
     
     def _calculate_new_value(self, stats):
+        
         return float(stats[self.variable_name].accepted)
 
     def __repr__(self):
 
-        return 'p_acc {}: {:.2f}'.format(self.origins[0], self.current_value)
+        return 'p_acc {} {}: {:.2f}'.format(self.variable_name, self.origins[0],
+                                            self.current_value)
 
     
 class REAcceptanceRateAverage(AbstractAverage):
 
     def __init__(self, replica1, replica2):
 
-        super(REAcceptanceRateAverage, self).__init__([replica1, replica2], ['accepted'], 'RE acceptance rate')
+        super(REAcceptanceRateAverage, self).__init__([replica1, replica2],
+                                                      ['accepted'],
+                                                      'RE acceptance rate')
 
         self._default_value = 0.0
 

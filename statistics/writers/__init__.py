@@ -9,36 +9,32 @@ from abc import ABCMeta, abstractmethod
 
 class AbstractStatisticsWriter(object):
 
-    def __init__(self, separator, fields_to_write=None):
+    def __init__(self, separator, variables_to_write=[], quantities_to_write=[]):
 
         self._separator = separator
-        self._fields_to_write = fields_to_write
+        self.variables_to_write = variables_to_write
+        self.quantities_to_write = quantities_to_write
 
-    def write(self, step, elements, which=None):
-        
-        if which is None:
-            which = self._fields_to_write
+    @abstractmethod
+    def write(self, step, elements):
+        pass
+    
+    def _write_single_quantity_stats(self, elements):
 
-        print which
-            
-        self._write_step_header(step)
-        quantity_classes = {quantity_name: elements.select(quantity_name=quantity_name) 
-                            for quantity_name in which}
-        
-        for name, klass in quantity_classes.iteritems():
-            sorted_quantities = self._sort_quantities(name, klass)
-            self._write_quantity_class_header(name)
-            for q in sorted_quantities:
-                self._outstream.write(self._format(q) + self._separator)
-            self._outstream.write('\n')
+        self._write_quantity_class_header(elements[0])
+        for e in self._sort_quantities(elements):
+            self._outstream.write(self._format(e) + self._separator)
+        self._outstream.write('\n')
+           
 
 class ConsoleStatisticsWriter(AbstractStatisticsWriter):
 
     __metaclass__ = ABCMeta
     
-    def __init__(self, fields_to_write=None):
+    def __init__(self, variables_to_write=[], quantities_to_write=[]):
 
-        super(ConsoleStatisticsWriter, self).__init__(' ', fields_to_write)
+        super(ConsoleStatisticsWriter, self).__init__(' ', variables_to_write,
+                                                      quantities_to_write)
         self._outstream = sys.stdout
         
     @abstractmethod
@@ -46,7 +42,7 @@ class ConsoleStatisticsWriter(AbstractStatisticsWriter):
         pass
 
     @abstractmethod
-    def _sort_quantities(self, name, klass):
+    def _sort_quantities(self, quantities):
         pass
     
     @abstractmethod
@@ -56,60 +52,71 @@ class ConsoleStatisticsWriter(AbstractStatisticsWriter):
     @abstractmethod
     def _write_quantity_class_header(self, class_name):
         pass
-    
+
+    def _write_all_but_header(self, quantities):
+
+        for quantity_name in list(set([quantity.name for quantity in quantities])):
+            quantities2 = quantities.select(name=quantity_name)
+            self._write_single_quantity_stats(quantities2)
+
+    def write(self, step, elements):
+
+        self._write_step_header(step)
+        self._write_all_but_header(elements)
+        
 
 class StandardConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
     '''
     Only prints acceptance rate and stepsize
     '''
 
-    def __init__(self):
-
-        # super(StandardConsoleMCMCStatisticsWriter, self).__init__(['mcmc_p_acc', 'stepsize'])
-        super(StandardConsoleMCMCStatisticsWriter, self).__init__([])
-    
     def _format(self, quantity):
-
-        if quantity.name == 'mcmc_p_acc':
+        
+        if 'acceptance rate' in quantity.name:
             return '{: >.3f}   '.format(quantity.current_value)
-        if quantity.name == 'stepsize':
+        elif 'stepsize' in quantity.name:
             return '{: <.2e}'.format(quantity.current_value)
     
     def _write_step_header(self, step):
 
         self._outstream.write('######### MC step: {} #########\n'.format(step))
 
-    def _sort_quantities(self, name, quantity_class):
+    def _sort_quantities(self, quantities):
 
-        return sorted(quantity_class, key=lambda x: int(list(x.origins)[0][len('sampler_replica'):]))
+        return sorted(quantities,
+                      key=lambda x: int(list(x.origins)[0][len('replica'):]))
     
-    def _write_quantity_class_header(self, class_name):
+    def _write_quantity_class_header(self, quantity):
+        
+        self._outstream.write('{:>10} {:>16}: '.format(quantity.variable_name,
+                                                       quantity.name))
 
-        if class_name == 'mcmc_p_acc':
-            self._outstream.write('MCMC    p_acc: ')
-        if class_name == 'stepsize':
-            self._outstream.write('MCMC stepsize: ')
+    def _write_all_but_header(self, elements):
 
+        for variable_name in self.variables_to_write:
+            quantities = elements.select(variable_name=variable_name)
+            super(StandardConsoleMCMCStatisticsWriter, self)._write_all_but_header(quantities)
+            
             
 class StandardConsoleREStatisticsWriter(ConsoleStatisticsWriter):
 
     def __init__(self):
 
-        super(StandardConsoleREStatisticsWriter, self).__init__(['RE acceptance rate'])
+        super(StandardConsoleREStatisticsWriter, self).__init__(quantities_to_write=['RE acceptance rate'])
 
     def _format(self, quantity):
 
-        if quantity.quantity_name == 'RE acceptance rate':
-            return '{: >.2f}   '.format(quantity.current_value)
+        if quantity.name == 'RE acceptance rate':
+            return '{: >.3f}   '.format(quantity.current_value)
 
     def _write_quantity_class_header(self, class_name):
 
-        self._outstream.write('RE      p_acc: ')
+        self._outstream.write('{:>10} {:>16}: '.format('RE', 'acceptance rate'))
 
-    def _sort_quantities(self, name, quantity_class):
+    def _sort_quantities(self, quantities):
 
-        return sorted(quantity_class, key=lambda x: min([int(y[len('replica'):]) 
-                                                         for y in x.origins]))
+        return sorted(quantities, key=lambda x: min([int(y[len('replica'):]) 
+                                                     for y in x.origins]))
 
     def _write_step_header(self, step):
         pass
@@ -119,9 +126,11 @@ class AbstractFileStatisticsWriter(AbstractStatisticsWriter):
 
     __metaclass__ = ABCMeta
     
-    def __init__(self, filename, fields_to_write=None):
+    def __init__(self, filename, variables_to_write=[], quantities_to_write=[]):
 
-        super(AbstractFileStatisticsWriter, self).__init__('\t', fields_to_write)
+        super(AbstractFileStatisticsWriter, self).__init__('\t',
+                                                           variables_to_write,
+                                                           quantities_to_write)
         
         self._filename = filename
         self._outstream = open(filename, 'w')
@@ -129,10 +138,10 @@ class AbstractFileStatisticsWriter(AbstractStatisticsWriter):
         self._outstream.close()
         self._separator = '\t'
 
-    def write(self, step, elements, fields=None):
+    def write(self, step, elements, quantities=None):
 
         self._outstream = open(self._filename, 'a')
-        super(AbstractFileStatisticsWriter, self).write(step, elements, fields)
+        super(AbstractFileStatisticsWriter, self).write(step, elements, quantities)
         self._outstream.close()
         
     @abstractmethod
@@ -141,12 +150,13 @@ class AbstractFileStatisticsWriter(AbstractStatisticsWriter):
 
 class StandardFileMCMCStatisticsWriter(AbstractFileStatisticsWriter):
 
-    def __init__(self, filename, fields_to_write=None):
+    def __init__(self, filename, variables_to_write=[], quantities_to_write=[]):
         
-        super(StandardFileMCMCStatisticsWriter, self).__init__(filename, fields_to_write)
+        super(StandardFileMCMCStatisticsWriter, self).__init__(filename,
+                                                               variables_to_write,
+                                                               quantities_to_write)
 
         self._separator = '\t'
-        self._fields_to_write = ['mcmc_p_acc', 'stepsize']
     
     def _format(self, quantity):
 
@@ -154,14 +164,13 @@ class StandardFileMCMCStatisticsWriter(AbstractFileStatisticsWriter):
 
     def _write_header(self):
 
-        # self._outstream.write('{} '.format(step))
         pass
 
     def _write_step_header(self, step):
 
         self._outstream.write('{}\t'.format(step))
 
-    def _sort_quantities(self, name, quantity_class):
+    def _sort_quantities(self, quantities):
 
         return sorted(quantity_class, key=lambda x: int(list(x.origins)[0][len('sampler_replica'):]))
 
@@ -171,11 +180,11 @@ class StandardFileMCMCStatisticsWriter(AbstractFileStatisticsWriter):
 
 class StandardFileREStatisticsWriter(AbstractFileStatisticsWriter):
 
-    def __init__(self, filename, fields_to_write=None):
-        
-        fields_to_write = ['RE acceptance rate'] if fields_to_write is None else fields_to_write
-        
-        super(StandardFileREStatisticsWriter, self).__init__(filename, fields_to_write)
+    def __init__(self, filename, variables_to_write=[], quantities_to_write=[]):
+                
+        super(StandardFileREStatisticsWriter, self).__init__(filename,
+                                                             variables_to_write,
+                                                             quantities_to_write)
 
         self._separator = '\t'
     
@@ -185,14 +194,13 @@ class StandardFileREStatisticsWriter(AbstractFileStatisticsWriter):
 
     def _write_header(self):
 
-        # self._outstream.write('{} '.format(step))
         pass
 
     def _write_step_header(self, step):
 
         self._outstream.write('{}\t'.format(step))
 
-    def _sort_quantities(self, name, quantity_class):
+    def _sort_quantities(self, name):
 
         return sorted(quantity_class, key=lambda x: min([int(y[len('replica'):]) 
                                                          for y in x.origins]))
@@ -206,7 +214,7 @@ class StandardFileREWorksStatisticsWriter(object):
     def __init__(self, outfolder):
 
         self._outfolder = outfolder
-        self._fields_to_write = ['re_works']
+        self._quantities_to_write = ['re_works']
 
     def write(self, elements):
 
@@ -222,7 +230,7 @@ class StandardFileREHeatsStatisticsWriter(object):
     def __init__(self, outfolder):
 
         self._outfolder = outfolder
-        self._fields_to_write = ['re_heats']
+        self._quantities_to_write = ['re_heats']
 
     def write(self, elements):
 
