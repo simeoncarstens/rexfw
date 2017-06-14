@@ -102,11 +102,11 @@ class StandardConsoleREStatisticsWriter(ConsoleStatisticsWriter):
 
     def __init__(self):
 
-        super(StandardConsoleREStatisticsWriter, self).__init__(quantities_to_write=['RE acceptance rate'])
+        super(StandardConsoleREStatisticsWriter, self).__init__(quantities_to_write=['acceptance rate'])
 
     def _format(self, quantity):
 
-        if quantity.name == 'RE acceptance rate':
+        if quantity.name == 'acceptance rate':
             return '{: >.3f}   '.format(quantity.current_value)
 
     def _write_quantity_class_header(self, class_name):
@@ -116,8 +116,8 @@ class StandardConsoleREStatisticsWriter(ConsoleStatisticsWriter):
     def _sort_quantities(self, quantities):
 
         return sorted(quantities, key=lambda x: min([int(y[len('replica'):]) 
-                                                     for y in x.origins]))
-
+                                                for y in x.origins]))
+    
     def _write_step_header(self, step):
         pass
  
@@ -138,10 +138,11 @@ class AbstractFileStatisticsWriter(AbstractStatisticsWriter):
         self._outstream.close()
         self._separator = '\t'
 
-    def write(self, step, elements, quantities=None):
+    @abstractmethod
+    def write(self, step, elements):
 
         self._outstream = open(self._filename, 'a')
-        super(AbstractFileStatisticsWriter, self).write(step, elements, quantities)
+        ## fill in here in subclasses
         self._outstream.close()
         
     @abstractmethod
@@ -172,18 +173,29 @@ class StandardFileMCMCStatisticsWriter(AbstractFileStatisticsWriter):
 
     def _sort_quantities(self, quantities):
 
-        return sorted(quantity_class, key=lambda x: int(list(x.origins)[0][len('sampler_replica'):]))
+        return sorted(quantities, key=lambda x: int(list(x.origins)[0][len('replica'):]))
 
-    def _write_quantity_class_header(self, class_name):
+    def _write_quantity_class_header(self, quantity):
         pass
 
+    def _write_all_but_header(self, quantities):
+
+        self._write_single_quantity_stats(quantities)
+
+    def write(self, step, elements):
+
+        self._outstream = open(self._filename, 'a')
+        self._write_step_header(step)
+        self._write_all_but_header(elements)
+        self._outstream.close()
+        
 
 class StandardFileREStatisticsWriter(AbstractFileStatisticsWriter):
 
-    def __init__(self, filename, variables_to_write=[], quantities_to_write=[]):
+    def __init__(self, filename, quantities_to_write=[]):
                 
         super(StandardFileREStatisticsWriter, self).__init__(filename,
-                                                             variables_to_write,
+                                                             [],
                                                              quantities_to_write)
 
         self._separator = '\t'
@@ -200,13 +212,24 @@ class StandardFileREStatisticsWriter(AbstractFileStatisticsWriter):
 
         self._outstream.write('{}\t'.format(step))
 
-    def _sort_quantities(self, name):
+    def _sort_quantities(self, quantities):
 
-        return sorted(quantity_class, key=lambda x: min([int(y[len('replica'):]) 
-                                                         for y in x.origins]))
+        return sorted(quantities, key=lambda x: min([int(y[len('replica'):]) 
+                                                     for y in x.origins]))
 
     def _write_quantity_class_header(self, class_name):
         pass
+
+    def write(self, step, elements):
+
+        self._outstream = open(self._filename, 'a')
+        self._write_step_header(step)
+        self._write_all_but_header(elements)
+        self._outstream.close()
+
+    def _write_all_but_header(self, quantities):
+
+        self._write_single_quantity_stats(quantities)
 
 
 class StandardFileREWorksStatisticsWriter(object):

@@ -62,7 +62,7 @@ class REAcceptanceRateAverage(AbstractAverage):
 
         super(REAcceptanceRateAverage, self).__init__([replica1, replica2],
                                                       ['accepted'],
-                                                      'RE acceptance rate')
+                                                      'acceptance rate')
 
         self._default_value = 0.0
 
