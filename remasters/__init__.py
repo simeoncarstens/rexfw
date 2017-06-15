@@ -127,10 +127,6 @@ class ExchangeMaster(object):
     def run(self, n_iterations, swap_interval=5, status_interval=100, samples_folder=None, 
             dump_interval=250, dump_step=5, statistics_update_interval=100):
 
-        import os
-        os.system('mkdir '+samples_folder)
-        os.system('mkdir '+samples_folder+'statistics/')
-
         for step in xrange(n_iterations):
             if step % swap_interval == 0 and step > 0:
                 swap_list = self._calculate_swap_list(step)

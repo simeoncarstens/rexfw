@@ -37,12 +37,14 @@ class LoggedQuantity(object):
 
 class SamplerStepsize(LoggedQuantity):
 
-    def __init__(self, replica):
+    def __init__(self, replica, variable_name):
 
-        super(SamplerStepsize, self).__init__([replica], ['stepsize'], 'stepsize')
+        super(SamplerStepsize, self).__init__([replica], ['stepsize'], 'stepsize',
+                                              variable_name)
+        # self._default_value = 0.0
 
     def _get_value(self, stats):
-
+        
         return stats[self.variable_name].stepsize
 
     def __repr__(self):

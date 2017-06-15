@@ -75,7 +75,7 @@ class StandardConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
         if 'acceptance rate' in quantity.name:
             return '{: >.3f}   '.format(quantity.current_value)
         elif 'stepsize' in quantity.name:
-            return '{: <.2e}'.format(quantity.current_value)
+            return '{: >.2e}'.format(quantity.current_value)
     
     def _write_step_header(self, step):
 
@@ -88,7 +88,7 @@ class StandardConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
     
     def _write_quantity_class_header(self, quantity):
         
-        self._outstream.write('{:>10} {:>16}: '.format(quantity.variable_name,
+        self._outstream.write('{:<10} {:>16}: '.format(quantity.variable_name,
                                                        quantity.name))
 
     def _write_all_but_header(self, elements):
@@ -111,7 +111,7 @@ class StandardConsoleREStatisticsWriter(ConsoleStatisticsWriter):
 
     def _write_quantity_class_header(self, class_name):
 
-        self._outstream.write('{:>10} {:>16}: '.format('RE', 'acceptance rate'))
+        self._outstream.write('{:<10} {:>16}: '.format('RE', 'acceptance rate'))
 
     def _sort_quantities(self, quantities):
 

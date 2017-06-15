@@ -114,15 +114,26 @@ def setup_default_re_master(n_replicas, sim_path, comm):
 def create_directories(sim_folder):
 
     import os
+    import errno
 
-    os.system('mkdir '+sim_folder)
-    samplespath = sim_folder + 'samples/'
-    os.system('mkdir '+samplespath)
-    statspath = sim_folder + 'statistics/'
-    os.system('mkdir '+statspath)
-    workspath = sim_folder + 'works/'
-    os.system('mkdir '+workspath)
-    heatspath = sim_folder + 'heats/'
-    os.system('mkdir '+heatspath)
-    energiespath = sim_folder + 'energies/'
-    os.system('mkdir '+energiespath)
+    def make_sure_path_exists(path):
+        try:
+            os.makedirs(path)
+        except OSError as exception:
+            if exception.errno != errno.EEXIST:
+                raise
+
+    for sub in ('samples', 'statistics', 'works', 'heats', 'energies'):
+        make_sure_path_exists(sim_folder + sub)
+
+    # os.system('mkdir '+sim_folder)
+    # samplespath = sim_folder + 'samples/'
+    # os.system('mkdir '+samplespath)
+    # statspath = sim_folder + 'statistics/'
+    # os.system('mkdir '+statspath)
+    # workspath = sim_folder + 'works/'
+    # os.system('mkdir '+workspath)
+    # heatspath = sim_folder + 'heats/'
+    # os.system('mkdir '+heatspath)
+    # energiespath = sim_folder + 'energies/'
+    # os.system('mkdir '+energiespath)
