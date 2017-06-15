@@ -12,8 +12,6 @@ from rexfw.remasters.requests import DumpSamplesRequest, SendStatsRequest
 from collections import namedtuple
 from abc import ABCMeta, abstractmethod
 
-REStats = namedtuple('REStats', 'accepted works')
-
 
 class ExchangeMaster(object):
 
@@ -30,7 +28,8 @@ class ExchangeMaster(object):
         self._comm = comm
         if swap_list_generator is None:
             from rexfw.slgenerators import StandardSwapListGenerator
-            swap_list_generator = StandardSwapListGenerator(self._n_replicas, self._swap_params)
+            swap_list_generator = StandardSwapListGenerator(self._n_replicas,
+                                                            self._swap_params)
         self._swap_list_generator = swap_list_generator
         self.step = 0
         
@@ -53,14 +52,18 @@ class ExchangeMaster(object):
         for i, (r1, r2, params) in enumerate(swap_list):
             from time import sleep
             self._comm.send(Parcel(self.name, r2,
-                                   SendGetStateAndEnergyRequest(self.name, r1)), r2)
-            ## Receives a None from r1 and r2; sent once buffered state / energies have been set
-            ## this is to sync everything and really hacky
+                                   SendGetStateAndEnergyRequest(self.name, r1)),
+                            r2)
+            ## Receives a None from r1 and r2; sent once buffered
+            ## state / energies have been set.
+            ## This is to sync everything and really hacky
             self._comm.recv(source=r2)
             self._comm.send(Parcel(self.name, r1,
-                                   SendGetStateAndEnergyRequest(self.name, r2)), r1)
-            ## Receives a None from r1 and r2; sent once buffered state / energies have been set
-            ## this is to sync everything and really hacky
+                                   SendGetStateAndEnergyRequest(self.name, r2)),
+                            r1)
+            ## Receives a None from r1 and r2; sent once buffered
+            ## state / energies have been set.
+            ## This is to sync everything and really hacky
             self._comm.recv(source=r1)
 
             self._send_propose_request(r1, r2, params)
@@ -93,14 +96,18 @@ class ExchangeMaster(object):
             oui = acc[i]
             
             if oui:
-                parcel = Parcel(self.name, r1, AcceptBufferedProposalRequest(self.name, True))
+                parcel = Parcel(self.name, r1,
+                                AcceptBufferedProposalRequest(self.name, True))
                 self._comm.send(parcel, r1)
-                parcel = Parcel(self.name, r2, AcceptBufferedProposalRequest(self.name, True))
+                parcel = Parcel(self.name, r2,
+                                AcceptBufferedProposalRequest(self.name, True))
                 self._comm.send(parcel, r2)
             else:
-                parcel = Parcel(self.name, r1, AcceptBufferedProposalRequest(self.name, False))
+                parcel = Parcel(self.name, r1,
+                                AcceptBufferedProposalRequest(self.name, False))
                 self._comm.send(parcel, r1)
-                parcel = Parcel(self.name, r2, AcceptBufferedProposalRequest(self.name, False))
+                parcel = Parcel(self.name, r2,
+                                AcceptBufferedProposalRequest(self.name, False))
                 self._comm.send(parcel, r2)
             self._comm.recv(r1)
             self._comm.recv(r2)
@@ -124,8 +131,9 @@ class ExchangeMaster(object):
 
         return [r for r in self.replica_names if not r in ex_replicas]
         
-    def run(self, n_iterations, swap_interval=5, status_interval=100, samples_folder=None, 
-            dump_interval=250, dump_step=5, statistics_update_interval=100):
+    def run(self, n_iterations, swap_interval=5, status_interval=100,
+            samples_folder=None, dump_interval=250, dump_step=5,
+            statistics_update_interval=100):
 
         for step in xrange(n_iterations):
             if step % swap_interval == 0 and step > 0:
@@ -138,7 +146,9 @@ class ExchangeMaster(object):
                 self._send_sample_requests(self.replica_names)
                 
             if step % dump_interval == 0 and step > 0:
-                self._send_dump_samples_request(samples_folder, step - dump_interval, step, dump_step)
+                self._send_dump_samples_request(samples_folder,
+                                                step - dump_interval,
+                                                step, dump_step)
 
             if step % status_interval == 0 and step > 0:
                 self._write_statistics(step)
@@ -159,7 +169,8 @@ class ExchangeMaster(object):
 
         for r in which_replicas:
             sampler_stats_list = self._comm.recv(source=r).data
-            self.sampling_statistics.update(origins=[r], sampler_stats_list=sampler_stats_list)
+            self.sampling_statistics.update(origins=[r],
+                                            sampler_stats_list=sampler_stats_list)
 
     def _write_statistics(self, step):
         
@@ -175,7 +186,8 @@ class ExchangeMaster(object):
     def _send_dump_samples_request(self, samples_folder, smin, smax, dump_step):
 
         for r in self.replica_names:
-            request = DumpSamplesRequest(self.name, samples_folder, smin, smax, dump_step)
+            request = DumpSamplesRequest(self.name, samples_folder, smin, smax,
+                                         dump_step)
             self._comm.send(Parcel(self.name, r, request), dest=r)
         
     def terminate_replicas(self):
