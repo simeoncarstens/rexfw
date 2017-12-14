@@ -81,24 +81,39 @@ def create_standard_AMDRENS_params(schedule, n_steps, timesteps,
 def setup_default_re_master(n_replicas, sim_path, comm):
 
     from rexfw.remasters import ExchangeMaster
-    from rexfw.statistics import MCMCSamplingStatistics, REStatistics
-    from rexfw.statistics.writers import StandardConsoleREStatisticsWriter, StandardFileMCMCStatisticsWriter, StandardFileREStatisticsWriter, StandardFileREWorksStatisticsWriter, StandardConsoleMCMCStatisticsWriter
+    from rexfw.statistics import Statistics, REStatistics
+    from rexfw.statistics.writers import StandardConsoleREStatisticsWriter, StandardFileMCMCStatisticsWriter, StandardFileREStatisticsWriter, StandardFileREWorksStatisticsWriter, StandardConsoleMCMCStatisticsWriter, StandardConsoleMCMCStatisticsWriter
+    from rexfw.convenience import create_standard_RE_params
     from rexfw.convenience.statistics import create_standard_averages, create_standard_works, create_standard_stepsizes, create_standard_heats
 
     replica_names = ['replica{}'.format(i) for i in range(1, n_replicas + 1)]
     params = create_standard_RE_params(n_replicas)
         
-    local_pacc_avgs, re_pacc_avgs = create_standard_averages(replica_names)
-    stepsizes = create_standard_stepsizes(replica_names)
+    from rexfw.statistics.averages import REAcceptanceRateAverage, MCMCAcceptanceRateAverage
+    from rexfw.statistics.logged_quantities import SamplerStepsize
+    
+    local_pacc_avgs = [MCMCAcceptanceRateAverage(r, 'x')
+                       for r in replica_names]
+    re_pacc_avgs = [REAcceptanceRateAverage(replica_names[i], replica_names[i+1]) 
+                    for i in range(len(replica_names) - 1)]
+    stepsizes = [SamplerStepsize(r, 'x') for r in replica_names]
     works = create_standard_works(replica_names)
     heats = create_standard_heats(replica_names)
     stats_path = sim_path + 'statistics/'
-    stats_writers = [StandardConsoleMCMCStatisticsWriter(),
-                     StandardFileMCMCStatisticsWriter(stats_path + '/mcmc_stats.txt')]
-    stats = MCMCSamplingStatistics(comm, elements=local_pacc_avgs + stepsizes, 
-                                   stats_writer=stats_writers)
+    stats_writers = [StandardConsoleMCMCStatisticsWriter(['x'],
+                                                         ['acceptance rate',
+                                                          'stepsize'
+                                                          ]),
+                     StandardFileMCMCStatisticsWriter(stats_path + '/mcmc_stats.txt',
+                                                      ['x'],
+                                                      ['acceptance rate',
+                                                       'stepsize'])
+                    ]
+    stats = Statistics(elements=local_pacc_avgs + stepsizes, 
+                       stats_writer=stats_writers)
     re_stats_writers = [StandardConsoleREStatisticsWriter(),
-                        StandardFileREStatisticsWriter(stats_path + 're_stats.txt')]
+                        StandardFileREStatisticsWriter(stats_path + 're_stats.txt',
+                                                       ['acceptance rate'])]
     works_path = sim_path + 'works/'
     works_writers = [StandardFileREWorksStatisticsWriter(works_path)]
     re_stats = REStatistics(elements=re_pacc_avgs,
@@ -125,15 +140,3 @@ def create_directories(sim_folder):
 
     for sub in ('samples', 'statistics', 'works', 'heats', 'energies'):
         make_sure_path_exists(sim_folder + sub)
-
-    # os.system('mkdir '+sim_folder)
-    # samplespath = sim_folder + 'samples/'
-    # os.system('mkdir '+samplespath)
-    # statspath = sim_folder + 'statistics/'
-    # os.system('mkdir '+statspath)
-    # workspath = sim_folder + 'works/'
-    # os.system('mkdir '+workspath)
-    # heatspath = sim_folder + 'heats/'
-    # os.system('mkdir '+heatspath)
-    # energiespath = sim_folder + 'energies/'
-    # os.system('mkdir '+energiespath)

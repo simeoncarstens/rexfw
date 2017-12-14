@@ -13,13 +13,6 @@ n_replicas = size - 1
 sim_name = 'normaltest'
 
 outpath = '/tmp/{}_{}replicas/'.format(sim_name, n_replicas)
-os.system('mkdir '+outpath)
-samplespath = outpath + 'samples/'
-os.system('mkdir '+samplespath)
-statspath = outpath + 'statistics/'
-os.system('mkdir '+statspath)
-workspath = outpath + 'works/'
-os.system('mkdir '+workspath)
 
 ## communicators are classes which serve as an interface between, say, MPI and the rexfw code
 ## other communicators could use, e.g., the Python multiprocessing module
@@ -32,31 +25,13 @@ proposer_names = ['prop{}'.format(i) for i in range(1, size)]
 if rank == 0:
 
     ## the first process (rank 0) runs an ExchangeMaster, which sends out commands / requests to the rpelica processes, such as "sample", "propose exchange states", "accept proposal", etc.
-    from rexfw.remasters import ExchangeMaster
-    ## I tried to implement general logging / sampling statistics capabilities. This has become pretty blown-up
-    from rexfw.statistics import MCMCSamplingStatistics, REStatistics
-    from rexfw.statistics.writers import StandardConsoleMCMCStatisticsWriter, StandardConsoleREStatisticsWriter, StandardFileMCMCStatisticsWriter, StandardFileREStatisticsWriter, StandardFileREWorksStatisticsWriter
-    ## in .convenience I have functions which create default parameters
-    from rexfw.convenience.statistics import create_standard_averages, create_standard_works, create_standard_stepsizes
 
-    params = create_standard_RE_params(n_replicas)
+    from rexfw.convenience import setup_default_re_master, create_directories
 
-    local_pacc_avgs, re_pacc_avgs = create_standard_averages(replica_names)
-    works = create_standard_works(replica_names)
-    stepsizes = create_standard_stepsizes(replica_names)
-
-    stats = MCMCSamplingStatistics(comm, elements=local_pacc_avgs + stepsizes, 
-                                   stats_writer=[StandardConsoleMCMCStatisticsWriter(),
-                                                 StandardFileMCMCStatisticsWriter(statspath + 'mcmc_stats.txt')])
-    re_stats = REStatistics(elements=re_pacc_avgs,work_elements=works, heat_elements=[],
-                            stats_writer=[StandardConsoleREStatisticsWriter(),
-                                          StandardFileREStatisticsWriter(statspath + 're_stats.txt')])
-    
-    master = ExchangeMaster('master0', replica_names, params, comm=comm, 
-                            sampling_statistics=stats, swap_statistics=re_stats)
-
+    create_directories(outpath)
+    master = setup_default_re_master(n_replicas, outpath, comm)    
     master.run(10000, swap_interval=5, status_interval=50, dump_interval=200, 
-               samples_folder=outpath, dump_step=3)
+               samples_folder=outpath + 'samples/', dump_step=3)
     master.terminate_replicas()
 
 else:
@@ -69,7 +44,7 @@ else:
     ## the slaves are relicts; originally I thought them to pass on messages from communicators to proposers / replicas, but now the replicas take care of everything themselves
     from rexfw.slaves import Slave
     ## this is mostly my CSB HMC sampler with a few extra functions for compatibility with rexfw
-    from rexfw.samplers.hmc import CompatibleHMCSampler
+    from isd2.samplers.hmc import FastHMCSampler
     ## every kind of RE / RENS has its own proposer classes which calculate proposal states
     from rexfw.proposers import REProposer
     
@@ -98,17 +73,17 @@ else:
     
     pdf = MyNormal(sigma=float(rank))
     numpy.random.seed(rank)
-    init_state = numpy.random.normal()
-    init_state = State(numpy.array([init_state]))
+    init_state = numpy.array([numpy.random.normal()])
     
     replica = Replica(name=replica_names[rank-1], 
                       state=init_state, 
                       pdf=pdf,
                       pdf_params={},
-                      sampler_class=CompatibleHMCSampler,
+                      sampler_class=FastHMCSampler,
                       sampler_params={'timestep': hmc_timestep,
-                                      'adapt_timestep': True,
-                                      'nsteps': hmc_trajectory_length},
+                                      'timestep_adaption_limit': 1000,
+                                      'nsteps': hmc_trajectory_length,
+                                      'variable_name': 'x'},
                       proposers=proposers,
                       comm=comm)
     slave = Slave({replica_names[rank-1]: replica}, comm)

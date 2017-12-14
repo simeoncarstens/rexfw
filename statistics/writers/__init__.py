@@ -75,7 +75,10 @@ class StandardConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
         if 'acceptance rate' in quantity.name:
             return '{: >.3f}   '.format(quantity.current_value)
         elif 'stepsize' in quantity.name:
-            return '{: >.2e}'.format(quantity.current_value)
+            if quantity.current_value is None:
+                return 'n/a'.format(quantity.current_value)
+            else:
+                return '{: >.2e}'.format(quantity.current_value)
     
     def _write_step_header(self, step):
 

@@ -134,8 +134,9 @@ class Replica(object):
                                                       request.s_max)
         with open(filename, 'w') as opf:
             from cPickle import dump
-            dump(self.samples[request.s_min:request.s_max:request.dump_step], opf, 2)
+            dump(self.samples[::request.dump_step], opf, 2)
 
+        self.samples = []
         Es_folder = request.samples_folder[:-len('samples/')] + 'energies/'
         numpy.save(Es_folder + self.name + '.npy', numpy.array(self.energy_trace))
     
