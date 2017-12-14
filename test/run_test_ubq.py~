@@ -1,3 +1,0 @@
-import sys
-
-it = int(sys.argv[1])

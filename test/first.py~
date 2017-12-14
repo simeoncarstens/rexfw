@@ -1,3 +1,0 @@
-import numpy
-
-from rexfw.remasters import ReplicaExchangeMaster
