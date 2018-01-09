@@ -130,8 +130,8 @@ class Replica(object):
 
         filename = '{}samples_{}_{}-{}.pickle'.format(request.samples_folder, 
                                                       self.name, 
-                                                      request.s_min, 
-                                                      request.s_max)
+                                                      request.s_min + request.offset, 
+                                                      request.s_max + request.offset)
         with open(filename, 'w') as opf:
             from cPickle import dump
             dump(self.samples[::request.dump_step], opf, 2)

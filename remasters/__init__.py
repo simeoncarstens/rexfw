@@ -132,7 +132,7 @@ class ExchangeMaster(object):
         return [r for r in self.replica_names if not r in ex_replicas]
         
     def run(self, n_iterations, swap_interval=5, status_interval=100,
-            samples_folder=None, dump_interval=250, dump_step=5,
+            samples_folder=None, dump_interval=250, offset=0, dump_step=5,
             statistics_update_interval=100):
 
         for step in xrange(n_iterations):
@@ -148,7 +148,7 @@ class ExchangeMaster(object):
             if step % dump_interval == 0 and step > 0:
                 self._send_dump_samples_request(samples_folder,
                                                 step - dump_interval,
-                                                step, dump_step)
+                                                step, offset, dump_step)
 
             if step % status_interval == 0 and step > 0:
                 self._write_statistics(step)
@@ -183,11 +183,12 @@ class ExchangeMaster(object):
             parcel = Parcel(self.name, t, SampleRequest(self.name))
             self._comm.send(parcel, dest=t)
 
-    def _send_dump_samples_request(self, samples_folder, smin, smax, dump_step):
+    def _send_dump_samples_request(self, samples_folder, smin, smax, offset,
+                                   dump_step):
 
         for r in self.replica_names:
             request = DumpSamplesRequest(self.name, samples_folder, smin, smax,
-                                         dump_step)
+                                         offset, dump_step)
             self._comm.send(Parcel(self.name, r, request), dest=r)
         
     def terminate_replicas(self):
