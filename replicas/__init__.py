@@ -126,7 +126,7 @@ class Replica(object):
 
     def _dump_samples(self, request):
 
-        import numpy
+        import numpy, os
 
         filename = '{}samples_{}_{}-{}.pickle'.format(request.samples_folder, 
                                                       self.name, 
@@ -138,7 +138,11 @@ class Replica(object):
 
         self.samples = []
         Es_folder = request.samples_folder[:-len('samples/')] + 'energies/'
-        numpy.save(Es_folder + self.name + '.npy', numpy.array(self.energy_trace))
+        Es_filename = Es_folder + self.name + '.npy'
+        if os.path.exists(Es_filename):
+            self.energy_trace = list(numpy.load(Es_filename)) + self.energy_trace
+        numpy.save(Es_filename, numpy.array(self.energy_trace))
+        self.energy_trace = []
     
     def process_request(self, request):
 
