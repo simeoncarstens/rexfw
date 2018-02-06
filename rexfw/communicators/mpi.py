@@ -28,21 +28,12 @@ class MPICommunicator(AbstractCommunicator):
     def send(self, obj, dest):
 
         rank = self._dest_to_rank(dest)
-        # try:
-        #     print obj.sender, "sending", obj.request, "to:", rank
-        # except:
-        #     print obj
-        # print obj.sender, "sending", obj.data, "to:", rank
-            
         self.comm.send(obj, dest=rank)
 
     def recv(self, source):
 
         rank = self._dest_to_rank(source)
 
-        # if not rank == -1:
-        #     print "recving from", rank
-        
         return self.comm.recv(source=rank)
 
     def sendrecv(self, obj, dest):

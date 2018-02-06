@@ -47,25 +47,23 @@ class ExchangeMaster(object):
 
         return zip(acc, works, heats)
 
+    def _send_get_state_and_energy_request(self, r1, r2):
+        
+        ## Receives a None from r1 and r2; sent once buffered
+        ## state / energies have been set.
+        ## This is to sync everything and really hacky
+        
+        self._comm.send(Parcel(self.name, r2,
+                               SendGetStateAndEnergyRequest(self.name, r1)),
+                        r2)
+        self._comm.recv(source=r2)
+
     def _trigger_proposal_calculation(self, swap_list):
 
         for i, (r1, r2, params) in enumerate(swap_list):
-            from time import sleep
-            self._comm.send(Parcel(self.name, r2,
-                                   SendGetStateAndEnergyRequest(self.name, r1)),
-                            r2)
-            ## Receives a None from r1 and r2; sent once buffered
-            ## state / energies have been set.
-            ## This is to sync everything and really hacky
-            self._comm.recv(source=r2)
-            self._comm.send(Parcel(self.name, r1,
-                                   SendGetStateAndEnergyRequest(self.name, r2)),
-                            r1)
-            ## Receives a None from r1 and r2; sent once buffered
-            ## state / energies have been set.
-            ## This is to sync everything and really hacky
-            self._comm.recv(source=r1)
 
+            self._send_get_state_and_energy_request(r1, r2)
+            self._send_get_state_and_energy_request(r2, r1)
             self._send_propose_request(r1, r2, params)
             params.proposer_params.reverse()
             self._send_propose_request(r2, r1, params)
