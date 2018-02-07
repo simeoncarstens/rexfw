@@ -7,14 +7,30 @@ from rexfw.communicators import AbstractCommunicator
 class MockCommunicator(AbstractCommunicator):
 
     def __init__(self):
-        self.last_sent = None
-        self.last_dest = None
-        self.last_received = None
-        self.last_source = None
+        self.sent = []
 
     def send(self, obj, dest):
-        self.last_sent = obj
-        self.last_dest = dest
+        self.sent.append([obj, dest])
 
     def recv(self, source):
-        self.last_source = source
+        pass
+
+
+class WorkHeatSendingMockCommunicator(AbstractCommunicator):
+
+    def send(self, obj, dest):
+        pass
+
+    def calculate_work_from_source(self, source):
+        return (int(source[-1]) + 1) ** 2
+    
+    def calculate_heat_from_source(self, source):
+        return (int(source[-1]) + 2) ** 2
+
+    def recv(self, source):
+
+        from rexfw import Parcel
+        
+        return Parcel(source, 'remaster0',
+                      (self.calculate_work_from_source(source),
+                       self.calculate_heat_from_source(source)))
