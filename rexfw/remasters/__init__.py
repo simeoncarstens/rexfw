@@ -88,25 +88,28 @@ class ExchangeMaster(object):
         from csb.numeric import exp
         return exp(-numpy.sum(works,1)) > numpy.random.uniform(size=len(works))
 
+    def _send_accept_exchange_request(self, dest):
+        parcel = Parcel(self.name, dest,
+                        AcceptBufferedProposalRequest(self.name, True))
+        self._comm.send(parcel, dest)
+
+    def _send_reject_exchange_request(self, dest):
+        parcel = Parcel(self.name, dest,
+                        AcceptBufferedProposalRequest(self.name, False))
+        self._comm.send(parcel, dest)
+        
     def _trigger_exchanges(self, swap_list, acc):
 
         for i, (r1, r2, params) in enumerate(swap_list):
-            oui = acc[i]
+            accept_exchange = acc[i]
             
-            if oui:
-                parcel = Parcel(self.name, r1,
-                                AcceptBufferedProposalRequest(self.name, True))
-                self._comm.send(parcel, r1)
-                parcel = Parcel(self.name, r2,
-                                AcceptBufferedProposalRequest(self.name, True))
-                self._comm.send(parcel, r2)
+            if accept_exchange:
+                self._send_accept_exchange_request(r1)
+                self._send_accept_exchange_request(r2)
             else:
-                parcel = Parcel(self.name, r1,
-                                AcceptBufferedProposalRequest(self.name, False))
-                self._comm.send(parcel, r1)
-                parcel = Parcel(self.name, r2,
-                                AcceptBufferedProposalRequest(self.name, False))
-                self._comm.send(parcel, r2)
+                self._send_reject_exchange_request(r1)
+                self._send_reject_exchange_request(r2)
+            ## receives DoNothingRequests to achieve synchronisation
             self._comm.recv(r1)
             self._comm.recv(r2)
 

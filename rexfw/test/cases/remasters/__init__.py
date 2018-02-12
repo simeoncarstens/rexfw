@@ -42,11 +42,13 @@ class testExchangeMaster(unittest.TestCase):
         self._replica_names = self._remaster.replica_names
         self._comm = self._remaster._comm
     
-    def _checkParcel(self, last_sent, dest):
+    def _checkParcel(self, last_sent, dest, sender=None):
 
+        if sender is None:
+            sender = self._remaster.name
         self.assertTrue(isinstance(last_sent, Parcel))
-        self.assertTrue(last_sent.sender == self._remaster.name)
-        self.assertTrue(last_sent.receiver == dest)        
+        self.assertTrue(last_sent.sender == sender)
+        self.assertTrue(last_sent.receiver == dest) 
 
     def _checkProposeRequest(self, sent_obj, dest, partner):
 
@@ -59,6 +61,25 @@ class testExchangeMaster(unittest.TestCase):
         self.assertTrue(request.sender == self._remaster.name)
         self.assertTrue(request.partner == partner)
         self.assertTrue(isinstance(request.params, ExchangeParams))
+
+    def _checkAcceptBufferedProposalRequest(self, sent_obj, dest, acc):
+
+        from rexfw.remasters.requests import AcceptBufferedProposalRequest
+
+        self._checkParcel(sent_obj, dest)
+        self.assertTrue(isinstance(sent_obj.data, AcceptBufferedProposalRequest))
+        request = sent_obj.data
+        self.assertTrue(request.sender == self._remaster.name)
+        self.assertTrue(request.accept == acc)
+        
+    def _checkDoNothingRequest(self, received_obj, sender):
+
+        from rexfw.replicas.requests import DoNothingRequest
+
+        self._checkParcel(received_obj, dest=self._remaster.name, sender=sender)
+        self.assertTrue(isinstance(received_obj.data, DoNothingRequest))
+        request = received_obj.data
+        self.assertTrue(request.sender == sender)
 
     def testSendProposeRequest(self):
         
@@ -123,9 +144,9 @@ class testExchangeMaster(unittest.TestCase):
 
     def testReceiveWorks(self):
 
-        from rexfw.test.cases.communicators import WorkHeatSendingMockCommunicator
+        from rexfw.test.cases.communicators import WorkHeatReceivingMockCommunicator
         
-        self._setUpExchangeMaster(WorkHeatSendingMockCommunicator())
+        self._setUpExchangeMaster(WorkHeatReceivingMockCommunicator())
         
         for step in (0, 1):
             swap_list = self._remaster._calculate_swap_list(step)
@@ -145,6 +166,59 @@ class testExchangeMaster(unittest.TestCase):
 
         ## TODO
         pass
+
+    # def testTriggerExchanges(self):
+
+    #     from rexfw.test.cases.communicators import DoNothingRequestReceivingMockCommunicator
+
+    #     self._setUpExchangeMaster(DoNothingRequestReceivingMockCommunicator())
+    #     comm = self._remaster._comm
+
+    #     swap_list = self._remaster._calculate_swap_list(0)
+    #     outcomes = [[True, False] for _ in range(len(swap_list))]
+
+    #     self._remaster._trigger_exchanges(swap_list, acc)
+
+    #         for i, (r1, r2, params) in enumerate(swap_list):
+
+    #             acc = outcome[i]
+    #             sent_obj1, _ = comm.sent[-2]
+    #             sent_obj2, _ = comm.sent[-1]
+    #             print acc
+    #             self._checkAcceptBufferedProposalRequest(sent_obj1, r1, acc)
+    #             self._checkAcceptBufferedProposalRequest(sent_obj2, r2, acc)
+    #             recvd_obj1 = comm.received[-2]
+    #             recvd_obj2 = comm.received[-1]
+    #             self._checkDoNothingRequest(recvd_obj1, r1)
+    #             self._checkDoNothingRequest(recvd_obj2, r2)
+
+
+    def testSendAcceptExchangeRequest(self):
+
+        self._setUpExchangeMaster(MockCommunicator())
+
+        for step in (0,1):
+            swap_list = self._remaster._calculate_swap_list(step)
+            for r1, r2, _ in swap_list:
+                for r in (r1, r2):
+                    self._remaster._send_accept_exchange_request(r)
+
+                    sent_obj, _ = self._remaster._comm.sent[-1]
+                    self._checkAcceptBufferedProposalRequest(sent_obj, r, True)
+
+    def testSendRejectExchangeRequest(self):
+
+        self._setUpExchangeMaster(MockCommunicator())
+
+        for step in (0,1):
+            swap_list = self._remaster._calculate_swap_list(step)
+            for r1, r2, _ in swap_list:
+                for r in (r1, r2):
+                    self._remaster._send_reject_exchange_request(r)
+
+                    sent_obj, _ = self._remaster._comm.sent[-1]
+                    self._checkAcceptBufferedProposalRequest(sent_obj, r, False)
+
 
 if __name__ == '__main__':
 

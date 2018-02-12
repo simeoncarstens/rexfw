@@ -16,7 +16,7 @@ class MockCommunicator(AbstractCommunicator):
         pass
 
 
-class WorkHeatSendingMockCommunicator(AbstractCommunicator):
+class WorkHeatReceivingMockCommunicator(MockCommunicator):
 
     def send(self, obj, dest):
         pass
@@ -34,3 +34,22 @@ class WorkHeatSendingMockCommunicator(AbstractCommunicator):
         return Parcel(source, 'remaster0',
                       (self.calculate_work_from_source(source),
                        self.calculate_heat_from_source(source)))
+
+
+class DoNothingRequestReceivingMockCommunicator(MockCommunicator):
+
+    def __init__(self):
+
+        super(DoNothingRequestReceivingMockCommunicator, self).__init__()
+
+        self.received = []
+        
+    def recv(self, source):
+
+        from rexfw import Parcel
+        from rexfw.replicas.requests import DoNothingRequest
+
+        parcel = Parcel(source, 'remaster0', DoNothingRequest(source))
+        self.received.append(parcel)
+        
+        return parcel
