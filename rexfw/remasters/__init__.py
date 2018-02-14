@@ -159,20 +159,27 @@ class ExchangeMaster(object):
 
             self.step += 1
 
-    def _update_sampling_statistics(self, which_replicas=None):
+    def _send_send_stats_requests(self, replicas):
 
-        if which_replicas is None:
-            which_replicas = self.replica_names
-            
-        for r in which_replicas:
+        for r in replicas:
             parcel = Parcel(self.name, r, SendStatsRequest(self.name))
             self._comm.send(parcel, dest=r)
 
-        for r in which_replicas:
+    def _receive_and_update_stats(self, replicas):
+
+        for r in replicas:
             sampler_stats_list = self._comm.recv(source=r).data
             self.sampling_statistics.update(origins=[r],
                                             sampler_stats_list=sampler_stats_list)
 
+    def _update_sampling_statistics(self, which_replicas=None):
+
+        if which_replicas is None:
+            which_replicas = self.replica_names
+
+        self._send_send_stats_requests(which_replicas)
+        self._receive_and_update_stats(which_replicas)
+        
     def _write_statistics(self, step):
         
         self.sampling_statistics.write_last(step)

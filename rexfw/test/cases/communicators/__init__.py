@@ -1,19 +1,28 @@
 '''
 '''
 
+from rexfw import Parcel
+
 from rexfw.communicators import AbstractCommunicator
+
+from collections import deque
 
 
 class MockCommunicator(AbstractCommunicator):
 
     def __init__(self):
-        self.sent = []
+        self.sent = deque()
+        self.received = deque()
 
     def send(self, obj, dest):
         self.sent.append([obj, dest])
 
     def recv(self, source):
-        pass
+
+        obj = Parcel(source, 'remaster0', None)
+        self.received.append([obj, source])
+
+        return obj
 
 
 class WorkHeatReceivingMockCommunicator(MockCommunicator):
@@ -42,7 +51,7 @@ class DoNothingRequestReceivingMockCommunicator(MockCommunicator):
 
         super(DoNothingRequestReceivingMockCommunicator, self).__init__()
 
-        self.received = []
+        self.received = deque()
         
     def recv(self, source):
 
