@@ -26,7 +26,7 @@ class MockReplica(Replica):
 
     def __init__(self, comm):
 
-        super(MockReplica, self).__init__('asdf', 4, MockPDF(), {'testparam': 5},
+        super(MockReplica, self).__init__('replica1', 4, MockPDF(), {'testparam': 5},
                                           MockSampler, {'testparam': 4}, MockProposer(),
                                           comm)
 
@@ -68,11 +68,39 @@ class testReplica(unittest.TestCase):
         self.assertTrue(sampler.testparam == 4)
 
     def testStateGetter(self):
+        ## TODO
         pass
-        #self._replica.initialize()
+
+    def testStateSetter(self):
+        ## TODO
+        pass
+
+    def _checkParcel(self, obj, dest, sender=None):
+        ## TODO: code duplication; similar code in other test cases
+        from rexfw import Parcel
+
+        if sender is None:
+            sender = self._replica.name
+        self.assertTrue(isinstance(obj, Parcel))
+        self.assertTrue(obj.sender == sender)
+        self.assertTrue(obj.receiver == dest)
+    
+    def testSendStateAndEnergy(self):
+
+        from rexfw.replicas.requests import GetStateAndEnergyRequest
         
+        sender = self._replica.name
+        other = 'replica23'
+        req = GetStateAndEnergyRequest(other)
+        self._replica._send_state_and_energy(req)
 
-
+        last_sent, dest = self._replica._comm.sent.pop()
+        self.assertTrue(dest == other)
+        self._checkParcel(last_sent, other, sender)
+        self.assertTrue(last_sent.data.sender == self._replica.name)
+        self.assertTrue(last_sent.data.state == self._replica.state)
+        self.assertTrue(last_sent.data.energy == self._replica.energy)
+        
 if __name__ == '__main__':
 
     unittest.main()

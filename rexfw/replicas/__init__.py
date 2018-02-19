@@ -89,8 +89,12 @@ class Replica(object):
 
     def _send_state_and_energy(self, request):
 
-        request = StoreStateEnergyRequest(request.sender, self.state, self.energy)
-        self._comm.send(Parcel(self.name, request.sender, request), request.sender)
+        # request = StoreStateEnergyRequest(request.sender, self.state, self.energy)
+        # self._comm.send(Parcel(self.name, request.sender, request), request.sender)
+        ## above was wrong, but didn't lead to any consequences
+        
+        new_request = StoreStateEnergyRequest(self.name, self.state, self.energy)
+        self._comm.send(Parcel(self.name, request.sender, new_request), request.sender)
 
     def _send_get_state_and_energy_request(self, request):
 
