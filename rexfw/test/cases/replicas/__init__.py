@@ -47,6 +47,17 @@ class MockSampler(object):
         self.pdf = pdf
         self.state = state
         self.testparam = testparam
+        self.last_sampled = None
+
+    def sample(self):
+
+        self.last_sampled = self.state ** 2
+        
+        return self.last_sampled
+
+    def get_last_draw_stats(self):
+
+        return 'nope'
 
 
 class testReplica(unittest.TestCase):
@@ -100,6 +111,49 @@ class testReplica(unittest.TestCase):
         self.assertTrue(last_sent.data.sender == self._replica.name)
         self.assertTrue(last_sent.data.state == self._replica.state)
         self.assertTrue(last_sent.data.energy == self._replica.energy)
+
+    def testSendGetStateAndEnergyRequest(self):
+
+        from rexfw.remasters.requests import SendGetStateAndEnergyRequest
+        from rexfw.replicas.requests import GetStateAndEnergyRequest
+        
+        other = 'replica123'
+        req = SendGetStateAndEnergyRequest('remaster0', other)
+        self._replica._send_get_state_and_energy_request(req)
+
+        last_sent, dest = self._replica._comm.sent.pop()
+        self.assertTrue(dest == 'replica123')
+        self._checkParcel(last_sent, other, self._replica.name)
+        self.assertTrue(isinstance(last_sent.data, GetStateAndEnergyRequest))
+        self.assertTrue(last_sent.data.sender == self._replica.name)
+
+    def testStoreStateEnergy(self):
+
+        from rexfw.replicas.requests import StoreStateEnergyRequest, DoNothingRequest
+
+        other = 'replica234'
+        req = StoreStateEnergyRequest(other, 2.5, 99)
+        self._replica._store_state_energy(req)
+
+        self.assertTrue(self._replica._buffered_partner_state == 2.5)
+        self.assertTrue(self._replica._buffered_partner_energy == 99)
+        last_sent, dest = self._replica._comm.sent.pop()
+        self.assertTrue(dest == self._replica._current_master)
+        self._checkParcel(last_sent, self._replica._current_master, self._replica.name)
+        self.assertTrue(isinstance(last_sent.data, DoNothingRequest))
+        self.assertTrue(last_sent.data.sender == self._replica.name)
+
+    def testSample(self):
+
+        old_state = self._replica.state
+        self._replica._sample(None)
+        
+        self.assertTrue(self._replica._sampler.last_sampled == old_state ** 2)
+        self.assertTrue(self._replica.samples[-1] == old_state ** 2)
+        self.assertTrue(self._replica.sampler_stats[-1][0] == 0)
+        self.assertTrue(self._replica.sampler_stats[-1][1] == 'nope')
+        self.assertTrue(self._replica.ctr == 1)
+        self.assertTrue(self._replica.energy_trace[-1] == -old_state ** 2)
         
 if __name__ == '__main__':
 
