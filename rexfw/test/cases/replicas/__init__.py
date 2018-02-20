@@ -27,8 +27,38 @@ class MockReplica(Replica):
     def __init__(self, comm):
 
         super(MockReplica, self).__init__('replica1', 4, MockPDF(), {'testparam': 5},
-                                          MockSampler, {'testparam': 4}, MockProposer(),
+                                          MockSampler, {'testparam': 4}, 
+                                          {'mock_proposer1': MockProposer()},
                                           comm)
+
+        self._request_processing_table.update(TestRequest='self._process_test_request({})')
+        self.test_request_processed = 0
+
+    def _process_test_request(self, request):
+
+        self.test_request_processed += 1
+
+        
+class ProposeMockReplica(MockReplica):
+
+    def __init__(self, comm):
+
+        super(ProposeMockReplica, self).__init__(comm)
+
+        self.works_heats_sent = False
+        self._buffered_partner_state = 34
+        self._buffered_partner_energy = 66
+
+    def _calculate_proposal(self, request):
+
+        from rexfw.proposers import GeneralTrajectory
+        
+        return GeneralTrajectory([0, 4], 23, 42)
+
+    def _send_works_heats(self, proposal):
+
+        self.works_heats_sent = True
+    
 
 class SetupSamplerMockReplica(Replica):
 
@@ -48,6 +78,7 @@ class MockSampler(object):
         self.state = state
         self.testparam = testparam
         self.last_sampled = None
+        self.sampler_stats = None
 
     def sample(self):
 
@@ -154,6 +185,101 @@ class testReplica(unittest.TestCase):
         self.assertTrue(self._replica.sampler_stats[-1][1] == 'nope')
         self.assertTrue(self._replica.ctr == 1)
         self.assertTrue(self._replica.energy_trace[-1] == -old_state ** 2)
+
+    def testSendStats(self):
+
+        from rexfw.remasters.requests import SendStatsRequest
+        
+        self._replica.sampler_stats.append(123)
+        self._replica._send_stats(SendStatsRequest('remaster23'))
+        
+        last_sent, dest = self._replica._comm.sent.pop()
+        self.assertTrue(dest == 'remaster23')
+        self._checkParcel(last_sent, 'remaster23', self._replica.name)
+        self.assertTrue(isinstance(last_sent.data, list))
+        self.assertTrue(last_sent.data[-1] == 123)
+
+    def _makeTmpDirs(self):
+
+        import os
+        from tempfile import mkdtemp
+        
+        tmpdir = mkdtemp()
+        tmp_sample_folder = '{}/samples/'.format(tmpdir)
+        os.makedirs(tmp_sample_folder)
+        os.makedirs('{}/energies/'.format(tmpdir))        
+
+        return tmpdir
+        
+    def testDumpSamples(self):
+
+        import os
+        import numpy as np
+        from rexfw.remasters.requests import DumpSamplesRequest
+
+        tmpdir = self._makeTmpDirs()
+        tmp_samples_folder = '{}/samples/'.format(tmpdir)
+        smin, smax = 3000, 4000
+        offset = 2
+        step = 2
+        req = DumpSamplesRequest('remaster45', tmp_samples_folder, smin, smax, offset, step)
+        buffered_samples = np.arange(1000)
+        self._replica.samples = buffered_samples
+        self._replica._dump_samples(req)
+
+        fname = '{}/samples_{}_{}-{}.pickle'.format(tmp_samples_folder,
+                                                    self._replica.name,
+                                                    smin + offset,
+                                                    smax + offset)
+        self.assertTrue(os.path.exists(fname))
+        dumped_samples = np.load(fname)
+        self.assertTrue(np.all(np.array(dumped_samples) == buffered_samples[::step]))
+        self.assertTrue(len(self._replica.samples) == 0)
+
+    def testDumpEnergies(self):
+
+        import os
+        import numpy as np
+        from rexfw.remasters.requests import DumpSamplesRequest
+
+        tmpdir = self._makeTmpDirs()
+        tmp_samples_folder = '{}/samples/'.format(tmpdir)
+        tmp_energies_folder = '{}/energies/'.format(tmpdir)
+        req = DumpSamplesRequest('remaster45', tmp_samples_folder, None, None, None, None)
+        self._replica.energy_trace = [3]
+        self._replica._dump_energies(req)
+
+        fname = '{}{}.npy'.format(tmp_energies_folder, self._replica.name)
+        self.assertTrue(os.path.exists(fname))
+        energies = np.load(fname)
+        self.assertTrue(len(energies) == 1)
+        self.assertTrue(energies[0] == 3)
+        self.assertTrue(len(self._replica.energy_trace) == 0)
+
+    def testProcessRequest(self):
+
+        from collections import namedtuple
+
+        TestRequest = namedtuple('TestRequest', '')
+        self._replica.process_request(TestRequest())
+
+        self.assertTrue(self._replica.test_request_processed == 1)
+
+    def testPropose(self):
+
+        from rexfw.remasters import ProposeRequest
+        from rexfw.slgenerators import ExchangeParams
+        from rexfw.proposers.params import REProposerParams
+        
+        self._replica = ProposeMockReplica(MockCommunicator())
+
+        req = ProposeRequest('remaster34', 'replica22', 
+                             ExchangeParams(['mock_proposer1', 'mock_proposer2'],
+                                            REProposerParams()))
+        self._replica._propose(req)
+
+        self.assertTrue(self._replica.works_heats_sent)
+        self.assertTrue(self._replica._buffered_proposal == 4)
         
 if __name__ == '__main__':
 

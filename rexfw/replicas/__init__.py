@@ -129,7 +129,6 @@ class Replica(object):
         self.sampler_stats = []
 
     def _dump_samples(self, request):
-
         import numpy, os
 
         filename = '{}samples_{}_{}-{}.pickle'.format(request.samples_folder, 
@@ -141,19 +140,37 @@ class Replica(object):
             dump(self.samples[::request.dump_step], opf, 2)
 
         self.samples = []
+        self._dump_energies(request)
+
+    def _dump_energies(self, request):
+
+        import numpy, os
+        
         Es_folder = request.samples_folder[:-len('samples/')] + 'energies/'
         Es_filename = Es_folder + self.name + '.npy'
         if os.path.exists(Es_filename):
             self.energy_trace = list(numpy.load(Es_filename)) + self.energy_trace
         numpy.save(Es_filename, numpy.array(self.energy_trace))
         self.energy_trace = []
-    
+                
     def process_request(self, request):
 
         dummy = None
         return eval(self._request_processing_table[request.__class__.__name__].format('request'))
     
     def _propose(self, request):
+
+        proposal = self._calculate_proposal(request)
+        self._send_works_heats(proposal)
+        self._buffered_proposal = proposal[-1]
+
+    def _send_works_heats(self, proposal):
+        
+        self._comm.send(Parcel(self.name, self._current_master, 
+                               (float(proposal.work), float(proposal.heat))), 
+                               self._current_master)
+        
+    def _calculate_proposal(self, request):
 
         partner_name = request.partner
         params = request.params
@@ -166,12 +183,9 @@ class Replica(object):
                                                     self._buffered_partner_state,
                                                     self._buffered_partner_energy,
                                                     proposer_params)
-        
-        self._comm.send(Parcel(self.name, self._current_master, 
-                               (float(proposal.work), float(proposal.heat))), 
-                               self._current_master)
-        self._buffered_proposal = proposal[-1]
 
+        return proposal
+        
     def _accept_buffered_proposal(self, request):
 
         from copy import deepcopy
