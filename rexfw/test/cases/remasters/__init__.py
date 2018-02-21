@@ -101,8 +101,8 @@ class testExchangeMaster(unittest.TestCase):
         if sender is None:
             sender = self._remaster.name
         self.assertTrue(isinstance(last_sent, Parcel))
-        self.assertTrue(last_sent.sender == sender)
-        self.assertTrue(last_sent.receiver == dest) 
+        self.assertEqual(last_sent.sender, sender)
+        self.assertEqual(last_sent.receiver, dest) 
 
     def _checkProposeRequest(self, sent_obj, dest, partner):
 
@@ -112,8 +112,8 @@ class testExchangeMaster(unittest.TestCase):
         self._checkParcel(sent_obj, dest)
         self.assertTrue(isinstance(sent_obj.data, ProposeRequest))
         request = sent_obj.data
-        self.assertTrue(request.sender == self._remaster.name)
-        self.assertTrue(request.partner == partner)
+        self.assertEqual(request.sender, self._remaster.name)
+        self.assertEqual(request.partner, partner)
         self.assertTrue(isinstance(request.params, ExchangeParams))
 
     def _checkAcceptBufferedProposalRequest(self, sent_obj, dest, acc):
@@ -123,8 +123,8 @@ class testExchangeMaster(unittest.TestCase):
         self._checkParcel(sent_obj, dest)
         self.assertTrue(isinstance(sent_obj.data, AcceptBufferedProposalRequest))
         request = sent_obj.data
-        self.assertTrue(request.sender == self._remaster.name)
-        self.assertTrue(request.accept == acc)
+        self.assertEqual(request.sender, self._remaster.name)
+        self.assertEqual(request.accept, acc)
         
     def _checkDoNothingRequest(self, received_obj, sender):
 
@@ -133,7 +133,7 @@ class testExchangeMaster(unittest.TestCase):
         self._checkParcel(received_obj, dest=self._remaster.name, sender=sender)
         self.assertTrue(isinstance(received_obj.data, DoNothingRequest))
         request = received_obj.data
-        self.assertTrue(request.sender == sender)
+        self.assertEqual(request.sender, sender)
 
     def testSendProposeRequest(self):
         
@@ -157,8 +157,8 @@ class testExchangeMaster(unittest.TestCase):
         self.assertTrue(isinstance(sent_obj.data,
                                    SendGetStateAndEnergyRequest))
         request = sent_obj.data
-        self.assertTrue(request.sender == self._remaster.name)
-        self.assertTrue(request.partner == partner)
+        self.assertEqual(request.sender, self._remaster.name)
+        self.assertEqual(request.partner, partner)
         
     def testSendGetStateAndEnergyRequest(self):
 
@@ -194,7 +194,7 @@ class testExchangeMaster(unittest.TestCase):
                                       r1, r2)
             self._checkProposeRequest(self._comm.sent.popleft()[0],
                                       r2, r1)
-            self.assertTrue(params.proposer_params.reverse_events == 2)           
+            self.assertEqual(params.proposer_params.reverse_events, 2)           
 
     def testReceiveWorks(self):
 
@@ -206,15 +206,15 @@ class testExchangeMaster(unittest.TestCase):
             swap_list = self._remaster._calculate_swap_list(step)
             works, heats = self._remaster._receive_works(swap_list)
 
-            self.assertTrue(len(works) == 1)
-            self.assertTrue(len(heats) == 1)
+            self.assertEqual(len(works), 1)
+            self.assertEqual(len(heats), 1)
 
             cwfs = self._remaster._comm.calculate_work_from_source
             chfs = self._remaster._comm.calculate_heat_from_source
-            self.assertTrue(works[0][0] == cwfs(swap_list[0][0]))
-            self.assertTrue(heats[0][0] == chfs(swap_list[0][0]))
-            self.assertTrue(works[0][1] == cwfs(swap_list[0][1]))
-            self.assertTrue(heats[0][1] == chfs(swap_list[0][1]))
+            self.assertEqual(works[0][0], cwfs(swap_list[0][0]))
+            self.assertEqual(heats[0][0], chfs(swap_list[0][0]))
+            self.assertEqual(works[0][1], cwfs(swap_list[0][1]))
+            self.assertEqual(heats[0][1], chfs(swap_list[0][1]))
 
     def testCalculateAcceptance(self):
 
@@ -266,15 +266,15 @@ class testExchangeMaster(unittest.TestCase):
                     r1_request = stack.popleft()
                     r2_request = stack.popleft()
                     if acc[i]:
-                        self.assertTrue(r1_request[0] == send_accept)
-                        self.assertTrue(r2_request[0] == send_accept)
+                        self.assertEqual(r1_request[0], send_accept)
+                        self.assertEqual(r2_request[0], send_accept)
                     else:
-                        self.assertTrue(r1_request[0] == send_reject)
-                        self.assertTrue(r2_request[0] == send_reject)
-                    self.assertTrue(len(r1_request[1]) == 1)
-                    self.assertTrue(len(r2_request[1]) == 1)
-                    self.assertTrue(r1_request[1][0] == r1)
-                    self.assertTrue(r2_request[1][0] == r2)
+                        self.assertEqual(r1_request[0], send_reject)
+                        self.assertEqual(r2_request[0], send_reject)
+                    self.assertEqual(len(r1_request[1]), 1)
+                    self.assertEqual(len(r2_request[1]), 1)
+                    self.assertEqual(r1_request[1][0], r1)
+                    self.assertEqual(r2_request[1][0], r2)
                     rcvd_objs = self._remaster._comm.received
                     r1_rcvd = rcvd_objs.popleft()
                     r2_rcvd = rcvd_objs.popleft()
@@ -293,24 +293,24 @@ class testExchangeMaster(unittest.TestCase):
             stack = self._remaster.callstack
 
             tpc = stack.popleft()
-            self.assertTrue(tpc[0] == 'trigger_proposal_calculation')
-            self.assertTrue(len(tpc[1]) == 1)
-            self.assertTrue(tpc[1][0] == swap_list)
+            self.assertEqual(tpc[0], 'trigger_proposal_calculation')
+            self.assertEqual(len(tpc[1]), 1)
+            self.assertEqual(tpc[1][0], swap_list)
             
             rw = stack.popleft()
-            self.assertTrue(rw[0] == 'receive_works')
-            self.assertTrue(len(rw[1]) == 1)
-            self.assertTrue(rw[1][0] == swap_list)
+            self.assertEqual(rw[0], 'receive_works')
+            self.assertEqual(len(rw[1]), 1)
+            self.assertEqual(rw[1][0], swap_list)
 
             ca = stack.popleft()
-            self.assertTrue(ca[0] == 'calculate_acceptance')
-            self.assertTrue(len(ca[1]) == 1)
+            self.assertEqual(ca[0], 'calculate_acceptance')
+            self.assertEqual(len(ca[1]), 1)
             self.assertTrue(np.all(ca[1][0] == self._remaster.mockworks(n_swaps)))
             
             te = stack.popleft()
-            self.assertTrue(te[0] == 'trigger_exchanges')
-            self.assertTrue(len(te[1]) == 2)
-            self.assertTrue(te[1][0] == swap_list)
+            self.assertEqual(te[0], 'trigger_exchanges')
+            self.assertEqual(len(te[1]), 2)
+            self.assertEqual(te[1][0], swap_list)
             self.assertTrue(np.all(te[1][1] == self._remaster.mockaccs(n_swaps)))
 
     def testGetNoExReplicas(self):
@@ -321,16 +321,16 @@ class testExchangeMaster(unittest.TestCase):
             swap_list = self._remaster._calculate_swap_list(step)
             no_exchange = self._remaster._get_no_ex_replicas(swap_list)
             
-            self.assertTrue(len(no_exchange) == 1)
-            self.assertTrue(no_exchange[0] == self._replica_names[2]
-                            if step == 0 else self._replica_names[0])
+            self.assertEqual(len(no_exchange), 1)
+            self.assertEqual(no_exchange[0], self._replica_names[2] if step == 0 
+                             else self._replica_names[0])
 
     def _checkSendStatsRequest(self, obj, sender):
 
         from rexfw.remasters.requests import SendStatsRequest
 
         self.assertTrue(isinstance(obj, SendStatsRequest))
-        self.assertTrue(obj.sender == sender)
+        self.assertEqual(obj.sender, sender)
 
     def testSendSendStatsRequests(self):
 
@@ -354,11 +354,11 @@ class testExchangeMaster(unittest.TestCase):
         for r in self._replica_names:
             obj, source = recvd_objs.popleft()
             self._checkParcel(obj, self._remaster.name, r)
-            self.assertTrue(source == r)
+            self.assertEqual(source, r)
             update = self._remaster.sampling_statistics.update_stack.popleft()
             self.assertTrue(update[0] is None)
-            self.assertTrue(len(update[1]) == 1)
-            self.assertTrue(update[1][0] == r)
+            self.assertEqual(len(update[1]), 1)
+            self.assertEqual(update[1][0], r)
 
     def testWriteStatistics(self):
 
@@ -367,19 +367,19 @@ class testExchangeMaster(unittest.TestCase):
         self._remaster._write_statistics(123)
 
         write_stack = self._remaster.sampling_statistics.write_stack
-        self.assertTrue(len(write_stack) == 1)
-        self.assertTrue(write_stack.pop() == 123)
+        self.assertEqual(len(write_stack), 1)
+        self.assertEqual(write_stack.pop(), 123)
         
         write_stack = self._remaster.swap_statistics.write_stack
-        self.assertTrue(len(write_stack) == 1)
-        self.assertTrue(write_stack.pop() == 123)
+        self.assertEqual(len(write_stack), 1)
+        self.assertEqual(write_stack.pop(), 123)
 
     def _checkSendSampleRequest(self, obj, sender):
 
         from rexfw.remasters.requests import SampleRequest
 
         self.assertTrue(isinstance(obj, SampleRequest))
-        self.assertTrue(obj.sender == sender)
+        self.assertEqual(obj.sender, sender)
 
     def testSendSampleRequests(self):
 
@@ -399,12 +399,12 @@ class testExchangeMaster(unittest.TestCase):
         from rexfw.remasters.requests import DumpSamplesRequest
 
         self.assertTrue(isinstance(obj, DumpSamplesRequest))
-        self.assertTrue(obj.sender == sender)
-        self.assertTrue(obj.samples_folder == folder)
-        self.assertTrue(obj.s_min == smin)
-        self.assertTrue(obj.s_max == smax)
-        self.assertTrue(obj.offset == offset)
-        self.assertTrue(obj.dump_step == dump_step)        
+        self.assertEqual(obj.sender, sender)
+        self.assertEqual(obj.samples_folder, folder)
+        self.assertEqual(obj.s_min, smin)
+        self.assertEqual(obj.s_max, smax)
+        self.assertEqual(obj.offset, offset)
+        self.assertEqual(obj.dump_step, dump_step)        
 
     def testSendDumpSamplesRequest(self):
 
@@ -430,7 +430,7 @@ class testExchangeMaster(unittest.TestCase):
         from rexfw.remasters.requests import DieRequest
 
         self.assertTrue(isinstance(obj, DieRequest))
-        self.assertTrue(obj.sender == sender)
+        self.assertEqual(obj.sender, sender)
 
     def testTerminateReplicas(self):
 

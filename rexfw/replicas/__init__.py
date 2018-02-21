@@ -169,6 +169,10 @@ class Replica(object):
         self._comm.send(Parcel(self.name, self._current_master, 
                                (float(proposal.work), float(proposal.heat))), 
                                self._current_master)
+
+    def _pick_proposer(self, params):
+
+        return list(set(self.proposers.keys()).intersection(set(params.proposers)))[-1]        
         
     def _calculate_proposal(self, request):
 
@@ -177,7 +181,7 @@ class Replica(object):
         proposer_params = params.proposer_params
         self._current_master = request.sender
 
-        proposer = list(set(self.proposers.keys()).intersection(set(params.proposers)))[-1]
+        proposer = self._pick_proposer(params)
         self.proposers[proposer].partner_name = partner_name
         proposal = self.proposers[proposer].propose(self, 
                                                     self._buffered_partner_state,
@@ -199,13 +203,6 @@ class Replica(object):
         self.energy_trace.append(self.energy)
         self.ctr += 1
         
-    def _send_energy(self, request):
-
-        state = request.state
-        E = self.get_energy() if state is None else self.get_energy(state) 
-        parcel = Parcel(self.name, request.sender, E)
-        self._comm.send(parcel, dest=request.sender)
-
     @property
     def energy(self):
 
