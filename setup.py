@@ -11,11 +11,11 @@ except IOError:
     pass
 
 __file__ = './'
-ROOT            = 'ensemble_hic'
+ROOT            = 'rexfw'
 LOCATION        = os.path.abspath(os.path.dirname(__file__))
 JUNK            = ['CVS']
 
-NAME            = "ensemble_hic"
+NAME            = "rexfw"
 VERSION         = "0.1"
 AUTHOR          = "Simeon Carstens"
 EMAIL           = "simeon.carstens@mpibpc.mpg.de"
