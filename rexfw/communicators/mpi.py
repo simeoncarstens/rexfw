@@ -16,12 +16,6 @@ class MPICommunicator(AbstractCommunicator):
                 return int(dest[len('replica'):])
             if 'master' in dest:
                 return int(dest[len('master'):])
-            if 'reprop' in dest:
-                return int(dest[len('reprop'):])
-            if 'rexex' in dest:
-                return int(dest[len('rexex'):])
-            if 'MCMCStats' in dest:
-                return int(dest[len('MCMCStats'):])
             if dest == 'all':
                 return MPI.ANY_SOURCE
 

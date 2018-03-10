@@ -11,8 +11,8 @@ class Replica(object):
 
     _current_master = None
     
-    def __init__(self, name, state, pdf, pdf_params, 
-                 sampler_class, sampler_params, proposers, comm):
+    def __init__(self, name, state, pdf, sampler_class, sampler_params, 
+                 proposers, output_folder, comm):
 
         self.name = name
         self.samples = []
@@ -21,26 +21,17 @@ class Replica(object):
         
         self.state = state
         self.pdf = pdf
-        self.pdf_params = pdf_params
         self.sampler_class = sampler_class
         self.sampler_params = sampler_params
         self.proposers = proposers
-
+        self.output_folder = output_folder
         self._comm = comm
-        self.simulating = False
-
-        self._setup_pdf()
         self._setup_sampler()
 
         self.energy_trace = []
-        self.ctr = 0
+        self._n_samples_drawn = 0
 
         self.sampler_stats = []
-
-        ## Hack to ensure compatibility with ISD2 PDFs
-        self._wrap_pdf()
-        
-        self._process = None
 
         self._request_processing_table = {}
         self._setup_request_processing_table()
@@ -116,11 +107,9 @@ class Replica(object):
         res = deepcopy(self._sampler.sample())
         self.state = res
         self.samples.append(deepcopy(res))
-        self.sampler_stats.append([self.ctr, self._sampler.get_last_draw_stats()])
-
-        if self.ctr % 2 == 0:
-            self.energy_trace.append(self.energy)
-        self.ctr += 1        
+        self.sampler_stats.append([self._n_samples_drawn, self._sampler.get_last_draw_stats()])
+        self._update_energy_trace()
+        self._increase_sample_counter()
         
     def _send_stats(self, request):
 
@@ -131,10 +120,10 @@ class Replica(object):
     def _dump_samples(self, request):
         import numpy, os
 
-        filename = '{}samples_{}_{}-{}.pickle'.format(request.samples_folder, 
-                                                      self.name, 
-                                                      request.s_min + request.offset, 
-                                                      request.s_max + request.offset)
+        filename = '{}samples/samples_{}_{}-{}.pickle'.format(self.output_folder, 
+                                                              self.name, 
+                                                              request.s_min + request.offset, 
+                                                              request.s_max + request.offset)
         with open(filename, 'w') as opf:
             from cPickle import dump
             dump(self.samples[::request.dump_step], opf, 2)
@@ -146,7 +135,7 @@ class Replica(object):
 
         import numpy, os
         
-        Es_folder = request.samples_folder[:-len('samples/')] + 'energies/'
+        Es_folder = self.output_folder + 'energies/'
         Es_filename = Es_folder + self.name + '.npy'
         if os.path.exists(Es_filename):
             self.energy_trace = list(numpy.load(Es_filename)) + self.energy_trace
@@ -200,8 +189,16 @@ class Replica(object):
         from rexfw.replicas.requests import DoNothingRequest
         self._comm.send(Parcel(self.name, self._current_master, DoNothingRequest(self.name)), 
                         self._current_master)
+        self._update_energy_trace()
+        self._increase_sample_counter()
+
+    def _increase_sample_counter(self):
+
+        self._n_samples_drawn += 1
+
+    def _update_energy_trace(self):
+        
         self.energy_trace.append(self.energy)
-        self.ctr += 1
         
     @property
     def energy(self):

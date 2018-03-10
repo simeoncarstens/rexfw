@@ -400,7 +400,6 @@ class testExchangeMaster(unittest.TestCase):
 
         self.assertTrue(isinstance(obj, DumpSamplesRequest))
         self.assertEqual(obj.sender, sender)
-        self.assertEqual(obj.samples_folder, folder)
         self.assertEqual(obj.s_min, smin)
         self.assertEqual(obj.s_max, smax)
         self.assertEqual(obj.offset, offset)
@@ -414,8 +413,7 @@ class testExchangeMaster(unittest.TestCase):
         smin, smax = 1, 2
         offset = 3
         dump_step = 4
-        self._remaster._send_dump_samples_request(folder, smin, smax, offset,
-                                                  dump_step)
+        self._remaster._send_dump_samples_request(smin, smax, offset, dump_step)
 
         sent_objs = self._remaster._comm.sent
         for r in self._replica_names:

@@ -147,8 +147,7 @@ class ExchangeMaster(object):
                 self._send_sample_requests(self.replica_names)
                 
             if step % dump_interval == 0 and step > 0:
-                self._send_dump_samples_request(samples_folder,
-                                                step - dump_interval,
+                self._send_dump_samples_request(step - dump_interval,
                                                 step, offset, dump_step)
 
             if step % status_interval == 0 and step > 0:
@@ -191,12 +190,10 @@ class ExchangeMaster(object):
             parcel = Parcel(self.name, t, SampleRequest(self.name))
             self._comm.send(parcel, dest=t)
 
-    def _send_dump_samples_request(self, samples_folder, smin, smax, offset,
-                                   dump_step):
+    def _send_dump_samples_request(self, smin, smax, offset, dump_step):
 
         for r in self.replica_names:
-            request = DumpSamplesRequest(self.name, samples_folder, smin, smax,
-                                         offset, dump_step)
+            request = DumpSamplesRequest(self.name, smin, smax, offset, dump_step)
             self._comm.send(Parcel(self.name, r, request), dest=r)
         
     def terminate_replicas(self):

@@ -13,8 +13,20 @@ from rexfw.replicas import Replica
 from rexfw.test.cases.communicators import MockCommunicator
 from rexfw.test.cases.communicators import DoNothingRequestReceivingMockCommunicator
 from rexfw.test.cases.statistics import MockStatistics, MockREStatistics
-from rexfw.test.cases.slgenerators import MockSwapListGenerator
 from rexfw.test.cases.proposers import MockProposer
+
+
+def makeTmpDirs():
+
+    import os
+    from tempfile import mkdtemp
+    
+    tmpdir = mkdtemp()
+    tmp_sample_folder = '{}/samples/'.format(tmpdir)
+    os.makedirs(tmp_sample_folder)
+    os.makedirs('{}/energies/'.format(tmpdir))        
+    
+    return tmpdir + '/'
 
 class MockPDF(object):
 
@@ -26,10 +38,10 @@ class MockReplica(Replica):
 
     def __init__(self, comm):
 
-        super(MockReplica, self).__init__('replica1', 4, MockPDF(), {'testparam': 5},
+        super(MockReplica, self).__init__('replica1', 4, MockPDF(),
                                           MockSampler, {'testparam': 4}, 
                                           {'mock_proposer1': MockProposer()},
-                                          comm)
+                                          makeTmpDirs(), comm)
 
         self._request_processing_table.update(TestRequest='self._process_test_request({})')
         self.test_request_processed = 0
@@ -204,7 +216,7 @@ class testReplica(unittest.TestCase):
         self.assertEqual(self._replica.samples[-1], old_state ** 2)
         self.assertEqual(self._replica.sampler_stats[-1][0], 0)
         self.assertEqual(self._replica.sampler_stats[-1][1], 'nope')
-        self.assertEqual(self._replica.ctr, 1)
+        self.assertEqual(self._replica._n_samples_drawn, 1)
         self.assertEqual(self._replica.energy_trace[-1], -old_state ** 2)
 
     def testSendStats(self):
@@ -219,18 +231,6 @@ class testReplica(unittest.TestCase):
         self._checkParcel(last_sent, 'remaster23', self._replica.name)
         self.assertTrue(isinstance(last_sent.data, list))
         self.assertEqual(last_sent.data[-1], 123)
-
-    def _makeTmpDirs(self):
-
-        import os
-        from tempfile import mkdtemp
-        
-        tmpdir = mkdtemp()
-        tmp_sample_folder = '{}/samples/'.format(tmpdir)
-        os.makedirs(tmp_sample_folder)
-        os.makedirs('{}/energies/'.format(tmpdir))        
-
-        return tmpdir
         
     def testDumpSamples(self):
 
@@ -238,20 +238,18 @@ class testReplica(unittest.TestCase):
         import numpy as np
         from rexfw.remasters.requests import DumpSamplesRequest
 
-        tmpdir = self._makeTmpDirs()
-        tmp_samples_folder = '{}/samples/'.format(tmpdir)
         smin, smax = 3000, 4000
         offset = 2
         step = 2
-        req = DumpSamplesRequest('remaster45', tmp_samples_folder, smin, smax, offset, step)
+        req = DumpSamplesRequest('remaster45', smin, smax, offset, step)
         buffered_samples = np.arange(1000)
         self._replica.samples = buffered_samples
         self._replica._dump_samples(req)
 
-        fname = '{}/samples_{}_{}-{}.pickle'.format(tmp_samples_folder,
-                                                    self._replica.name,
-                                                    smin + offset,
-                                                    smax + offset)
+        fname = '{}samples/samples_{}_{}-{}.pickle'.format(self._replica.output_folder,
+                                                           self._replica.name,
+                                                           smin + offset,
+                                                           smax + offset)
         self.assertTrue(os.path.exists(fname))
         dumped_samples = np.load(fname)
         self.assertTrue(np.all(np.array(dumped_samples) == buffered_samples[::step]))
@@ -263,14 +261,11 @@ class testReplica(unittest.TestCase):
         import numpy as np
         from rexfw.remasters.requests import DumpSamplesRequest
 
-        tmpdir = self._makeTmpDirs()
-        tmp_samples_folder = '{}/samples/'.format(tmpdir)
-        tmp_energies_folder = '{}/energies/'.format(tmpdir)
-        req = DumpSamplesRequest('remaster45', tmp_samples_folder, None, None, None, None)
+        req = DumpSamplesRequest('remaster45', None, None, None, None)
         self._replica.energy_trace = [3]
         self._replica._dump_energies(req)
 
-        fname = '{}{}.npy'.format(tmp_energies_folder, self._replica.name)
+        fname = '{}energies/{}.npy'.format(self._replica.output_folder, self._replica.name)
         self.assertTrue(os.path.exists(fname))
         energies = np.load(fname)
         self.assertEqual(len(energies), 1)
@@ -356,7 +351,7 @@ class testReplica(unittest.TestCase):
         self.assertEqual(dest, self._replica._current_master)
         self._checkParcel(last_sent, self._replica._current_master, self._replica.name)
         self.assertEqual(self._replica.energy_trace[-1], self._replica.energy)
-        self.assertEqual(self._replica.ctr, 1)
+        self.assertEqual(self._replica._n_samples_drawn, 1)
         
     def testAcceptBufferedProposal(self):
 

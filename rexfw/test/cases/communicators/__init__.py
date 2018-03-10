@@ -1,11 +1,12 @@
 '''
 '''
 
-from rexfw import Parcel
-
-from rexfw.communicators import AbstractCommunicator
-
+import unittest
 from collections import deque
+
+from rexfw import Parcel
+from rexfw.communicators import AbstractCommunicator
+from rexfw.communicators.mpi import MPICommunicator
 
 
 class MockCommunicator(AbstractCommunicator):
@@ -62,3 +63,23 @@ class DoNothingRequestReceivingMockCommunicator(MockCommunicator):
         self.received.append(parcel)
         
         return parcel
+
+
+class testMPICommnicator(unittest.TestCase):
+
+    def setUp(self):
+
+        self._comm = MPICommunicator()
+
+    def testDestToRank(self):
+
+        pairs = (('replica6', 6), ('replica13', 13), ('replica133', 133),
+                 ('master0', 0), ('master10', 10))
+
+        for dest, rank in pairs:
+            self.assertEqual(self._comm._dest_to_rank(dest), rank)
+
+
+if __name__ == '__main__':
+
+    unittest.main()
