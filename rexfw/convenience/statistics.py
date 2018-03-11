@@ -1,19 +1,27 @@
 '''
+Some functions creating default statistics elements
 '''
 
-
-def create_standard_averages(replica_names):
-
-    from rexfw.statistics.averages import REAcceptanceRateAverage, MCMCAcceptanceRateAverage
+def create_default_MCMC_averages(replica_names, variable_name='x'):
     
-    local_pacc_avgs = [MCMCAcceptanceRateAverage('sampler_'+r) for r in replica_names]
+    from rexfw.statistics.averages import MCMCAcceptanceRateAverage
+    
+    mcmc_pacc_avgs = [MCMCAcceptanceRateAverage(replica_name, 'x')
+                      for replica_name in replica_names]
+
+    return mcmc_pacc_avgs
+
+
+def create_default_RE_averages(replica_names):
+
+    from rexfw.statistics.averages import REAcceptanceRateAverage
+    
     re_pacc_avgs = [REAcceptanceRateAverage(replica_names[i], replica_names[i+1]) 
                     for i in range(len(replica_names) - 1)]
     
-    return local_pacc_avgs, re_pacc_avgs
+    return re_pacc_avgs
 
-
-def create_standard_works(replica_names):
+def create_default_works(replica_names):
 
     from rexfw.statistics.logged_quantities import REWorks
 
@@ -21,7 +29,7 @@ def create_standard_works(replica_names):
 
     return works
 
-def create_standard_heats(replica_names):
+def create_default_heats(replica_names):
 
     from rexfw.statistics.logged_quantities import REHeats
 
@@ -29,8 +37,10 @@ def create_standard_heats(replica_names):
 
     return heats
 
-def create_standard_stepsizes(replica_names):
+def create_default_stepsizes(replica_names, variable_name='x'):
 
     from rexfw.statistics.logged_quantities import SamplerStepsize
 
-    return [SamplerStepsize('sampler_'+r) for r in replica_names]
+    stepsizes = [SamplerStepsize(replica_name, variable_name) for replica_name in replica_names]
+
+    return stepsizes

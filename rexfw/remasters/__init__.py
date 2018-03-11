@@ -2,14 +2,13 @@
 Master classes implementing exchange criteria for RE and derived algorithms
 '''
 
-import numpy
+import numpy as np
 
 from rexfw import Parcel
 from rexfw.remasters.requests import SampleRequest, DieRequest, ProposeRequest, AcceptBufferedProposalRequest
 from rexfw.remasters.requests import GetStateAndEnergyRequest_master, SendGetStateAndEnergyRequest
 from rexfw.remasters.requests import DumpSamplesRequest, SendStatsRequest
 
-from collections import namedtuple
 from abc import ABCMeta, abstractmethod
 
 
@@ -18,7 +17,34 @@ class ExchangeMaster(object):
     def __init__(self, name, replica_names, swap_params, 
                  sampling_statistics, swap_statistics, 
                  comm, swap_list_generator=None):
+        '''
+        Default master object to coordinate RE(NS) swaps
 
+        @param name: a name for the object. TODO: atm, has to be 'master0' for the
+                     MPICommunicator to work
+        @type name: L{String}
+
+        @param replica_names: a list containing the names of all the replicas
+        @type replica_names: L{list}
+
+        @param swap_params: a list of L{ExchangeParams} objects
+        @type swap_params: L{list}
+
+        @param sampling_statistics: a L{Statistics} object to log sampling statistics like
+                                    acceptance rates etc.
+        @type sampling_statistics: L{Statistics}
+
+        @param swap_statistics: a L{REStatistics} object to log replica exchange statistics
+                                like acceptance rates etc.
+        @type swap_statistics: L{REStatistics}
+
+        @param comm: a communicator object in charge of communicating with the replicas
+        @type comm: L{AbstractCommunicator}
+
+        @param swap_list_generator: an object which creates swap lists with items
+                                    consisting of two replica names and a parameter object            
+        @type swap_list_generator: L{AbstractSwapListGenerator}
+        '''
         self.name = name
         self.replica_names = replica_names
         self._n_replicas = len(self.replica_names)
@@ -33,12 +59,36 @@ class ExchangeMaster(object):
         self._swap_list_generator = swap_list_generator
         self.step = 0
         
-    def _send_propose_request(self, r1, r2, params):
+    def _send_propose_request(self, replica1, replica2, params):
+        '''
+        Sends a request to replica1 telling it to propose a state for replica2
+        using information in params (an ExchangeParams object defined in )
+
+        @param replica1: name of 1st replica involved in swap
+        @type replica1: L{String}
+
+        @param replica2: name of 2nd replica involved in swap
+        @type replica2: L{String}
+
+        @param params: an L{ExchangeParams} object holding information required
+                       to perform the swap
+        @type params: L{ExchangeParams}
+        '''
         
-        request = ProposeRequest(self.name, r2, params)
-        self._comm.send(Parcel(self.name, r1, request), dest=r1)
+        request = ProposeRequest(self.name, replica2, params)
+        self._comm.send(Parcel(self.name, replica1, request), dest=replica1)
 
     def _perform_exchanges(self, swap_list):
+        '''
+        Attempts exchanges defined in swap_list. 
+
+        @param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an L{ExchangeParams} object
+        @type swap_list: L{list}
+
+        @return: three lists: acceptance statuses (0 / 1), works  and heats
+        @rtype: L{list}
+        '''
         
         self._trigger_proposal_calculation(swap_list)
         works, heats = self._receive_works(swap_list)
@@ -47,94 +97,220 @@ class ExchangeMaster(object):
 
         return zip(acc, works, heats)
 
-    def _send_get_state_and_energy_request(self, r1, r2):
-        
-        ## Receives a None from r1 and r2; sent once buffered
-        ## state / energies have been set.
-        ## This is to sync everything and really hacky
-        
-        self._comm.send(Parcel(self.name, r2,
-                               SendGetStateAndEnergyRequest(self.name, r1)),
-                        r2)
-        self._comm.recv(source=r2)
+    def _send_get_state_and_energy_request(self, replica1, replica2):
+        '''
+        Sends a request to replica1 to make it send a request to replica2 ordering
+        it (replica2) to send its (replica2) state and and energy to replica1. 
+        Receives a None from replica1 and replica2; sent once buffered
+        state / energies have been set.
+        This is to sync everything and really hacky
+
+        @param replica1: name of 1st replica involved in swap
+        @type replica1: L{String}
+
+        @param replica2: name of 2nd replica involved in swap
+        @type replica2: L{String}
+        '''
+        self._comm.send(Parcel(self.name, replica2,
+                               SendGetStateAndEnergyRequest(self.name, replica1)),
+                        replica2)
+        self._comm.recv(source=replica2)
 
     def _trigger_proposal_calculation(self, swap_list):
+        '''
+        Makes all involved replicas propose states.
 
-        for i, (r1, r2, params) in enumerate(swap_list):
+        @param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an L{ExchangeParams} object
+        @type swap_list: L{list}
+        '''
 
-            self._send_get_state_and_energy_request(r1, r2)
-            self._send_get_state_and_energy_request(r2, r1)
-            self._send_propose_request(r1, r2, params)
+        for i, (replica1, replica2, params) in enumerate(swap_list):
+
+            self._send_get_state_and_energy_request(replica1, replica2)
+            self._send_get_state_and_energy_request(replica2, replica1)
+            self._send_propose_request(replica1, replica2, params)
             params.proposer_params.reverse()
-            self._send_propose_request(r2, r1, params)
+            self._send_propose_request(replica2, replica1, params)
             params.proposer_params.reverse()
             
     def _receive_works(self, swap_list):
+        '''
+        Receives works from all swapping replicas.
+        
+        @param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an L{ExchangeParams} object
+        @type swap_list: L{list}
 
-        works = numpy.zeros((len(swap_list), 2))
-        heats = numpy.zeros((len(swap_list), 2))
-        for i, (r1, r2, params) in enumerate(swap_list):
-            data_r1 = self._comm.recv(source=r1).data
-            data_r2 = self._comm.recv(source=r2).data
-            works[i][0] = data_r1[0]
-            works[i][1] = data_r2[0]
-            heats[i][0] = data_r1[1]
-            heats[i][1] = data_r2[1]
+        @return: lists of works and heats
+        @rtype: L{tuple}
+        '''
+
+        works = np.zeros((len(swap_list), 2))
+        heats = np.zeros((len(swap_list), 2))
+        for i, (replica1, replica2, params) in enumerate(swap_list):
+            data_replica1 = self._comm.recv(source=replica1).data
+            data_replica2 = self._comm.recv(source=replica2).data
+            works[i][0] = data_replica1[0]
+            works[i][1] = data_replica2[0]
+            heats[i][0] = data_replica1[1]
+            heats[i][1] = data_replica2[1]
             
         return works, heats
 
     def _calculate_acceptance(self, works):
+        '''
+        Determines whether swaps are being accepted or rejected
 
-        from csb.numeric import exp
-        return exp(-numpy.sum(works,1)) > numpy.random.uniform(size=len(works))
+        @param works: array of works with shape (number of swaps, 2),
+                      the 2nd dimension are the works for forward- and backward
+                      trajectory
+        @type works: L{numpy.ndarray}
+
+        @return: array of Boolean (0 / 1) values indicating whether swaps have
+                 been accepted (1) or rejected (0)              
+        @rtype: L{numpy.ndarray}
+        '''
+
+        return np.exp(-np.sum(works,1)) > np.random.uniform(size=len(works))
 
     def _send_accept_exchange_request(self, dest):
+        '''
+        Sends a request to accept a proposed swap state.
+
+        @param dest: name of destination replica
+        @type dest: L{String}
+        '''
         parcel = Parcel(self.name, dest,
                         AcceptBufferedProposalRequest(self.name, True))
         self._comm.send(parcel, dest)
 
     def _send_reject_exchange_request(self, dest):
+        '''
+        Sends a request to reject a proposed swap state.
+
+        @param dest: name of destination replica
+        @type dest: L{String}
+        '''
         parcel = Parcel(self.name, dest,
                         AcceptBufferedProposalRequest(self.name, False))
         self._comm.send(parcel, dest)
         
     def _trigger_exchanges(self, swap_list, acc):
+        '''
+        Sends accept / reject exchange requests to all involved replicas
 
-        for i, (r1, r2, params) in enumerate(swap_list):
+        @param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an L{ExchangeParams} object
+        @type swap_list: L{list}
+
+        @param acc: array containing boolean (0 / 1) values indicating which
+                    swaps have been accepted and which haven't
+        @type acc: L{numpy.ndarray}
+        '''
+        for i, (replica1, replica2, params) in enumerate(swap_list):
             accept_exchange = acc[i]
             
             if accept_exchange:
-                self._send_accept_exchange_request(r1)
-                self._send_accept_exchange_request(r2)
+                self._send_accept_exchange_request(replica1)
+                self._send_accept_exchange_request(replica2)
             else:
-                self._send_reject_exchange_request(r1)
-                self._send_reject_exchange_request(r2)
+                self._send_reject_exchange_request(replica1)
+                self._send_reject_exchange_request(replica2)
             ## receives DoNothingRequests to achieve synchronisation
-            self._comm.recv(r1)
-            self._comm.recv(r2)
+            self._comm.recv(replica1)
+            self._comm.recv(replica2)
 
     def _update_swap_stats(self, swap_list, results, step):
+        '''
+        Updates replica exchange statistics.
 
+        @param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an L{ExchangeParams} object
+        @type swap_list: L{list}
+
+        @param results: a two-dimensional list of shape (number of swaps, 3), in which
+                        the 2nd dimension is (0 / 1 (reject / accept), works, heats)
+        @type results: L{list}
+
+        @param step: the sampling step at which the swaps were performed
+        @type step: L{int}
+        '''
+
+        ## TODO: this shouldn't be here...
+        from collections import namedtuple
         RESwapStats = namedtuple('RESwapStats', 'accepted works heats')
         
-        for j, (r1, r2, _) in enumerate(swap_list):
+        for j, (replica1, replica2, _) in enumerate(swap_list):
             stats = RESwapStats(results[j][0], results[j][1], results[j][2])
-            self.swap_statistics.update([r1, r2], [[self.step, stats]])
+            self.swap_statistics.update([replica1, replica2], [[self.step, stats]])
                             
-    def _calculate_swap_list(self, i):
+    def _calculate_swap_list(self, step):
+        '''
+        Creates the swap list for a given step
 
-        return self._swap_list_generator.generate_swap_list(step=i)
+        @param step: the sampling step for which to create the swap list
+        @type step: L{int}
+
+        @return: a list of list in which each list element contains two replica  
+                 names involved in a swap an an L{ExchangeParams} object
+        @rtype: L{list}
+        '''
+
+        return self._swap_list_generator.generate_swap_list(step=step)
         
     def _get_no_ex_replicas(self, swap_list):
+        '''
+        For a given swap list, calculate which replicas do NOT perform swaps
+        and thus will continue normal sampling.
+
+        @param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an L{ExchangeParams} object
+        @type swap_list: L{list}
+
+        @return: a list of replica names
+        @rtype: L{list}
+        '''
 
         ex_replicas = [[x[0], x[1]] for x in swap_list]
         ex_replicas = [x for z in ex_replicas for x in z]
 
-        return [r for r in self.replica_names if not r in ex_replicas]
+        return [replica_name for replica_name in self.replica_names 
+                if not replica_name in ex_replicas]
         
     def run(self, n_iterations, swap_interval=5, status_interval=100,
-            samples_folder=None, dump_interval=250, offset=0, dump_step=5,
+            dump_interval=250, offset=0, dump_step=5,
             statistics_update_interval=100):
+        '''
+        Runs the main loop of length n_iterations (number of sampling steps),
+        in which normal sampling and swaps are performed.
+        Furthermore, in given intervals, statistics are updated and statistics
+        and samples are written to files.
+
+        @param n_iterations: number of sampling steps to perform
+        @type n_iterations: L{int}
+
+        @param swap_interval: the interval with which to perform swaps
+        @type swap_interval: L{int}
+
+        @param status_interval: the interval with which to write sampling statistics
+        @type status_interval: L{int}
+
+        @param dump_interval: the interval with which to write samples to files
+        @type dump_interval: L{int}
+
+        @param offset: an offset to add to the sample counter when writing samples
+                       to files. This allows to continue simulations.
+        @type offset: L{int}
+
+        @param dump_step: allows to perform sub-sampling: write only every dump_step-th
+                          sample to a file
+        @type dump_step: L{int}
+
+        @param statistics_update_interval: interval with which to update sampling
+                                           statistics
+        @type statistics_update_interval: L{int}
+        '''
 
         for step in xrange(n_iterations):
             if step % swap_interval == 0 and step > 0:
@@ -159,12 +335,24 @@ class ExchangeMaster(object):
             self.step += 1
 
     def _send_send_stats_requests(self, replicas):
+        '''
+        Send requests to replicas to send sampling statistics to this master object.
+
+        @param replica: replica names
+        @type replicas: L{list}
+        '''
 
         for r in replicas:
             parcel = Parcel(self.name, r, SendStatsRequest(self.name))
             self._comm.send(parcel, dest=r)
 
     def _receive_and_update_stats(self, replicas):
+        '''
+        Receive sampling statistics from replicas and update statistics object
+
+        @param replicas: replica names
+        @type replicas: L{list}
+        '''
 
         for r in replicas:
             sampler_stats_list = self._comm.recv(source=r).data
@@ -172,7 +360,13 @@ class ExchangeMaster(object):
                                             sampler_stats_list=sampler_stats_list)
 
     def _update_sampling_statistics(self, which_replicas=None):
+        '''
+        Update sampling statistics
 
+        @params which_replicas: replicas for which to update statistics
+        @type which_replicas: L{list}
+        '''
+        
         if which_replicas is None:
             which_replicas = self.replica_names
 
@@ -180,23 +374,53 @@ class ExchangeMaster(object):
         self._receive_and_update_stats(which_replicas)
         
     def _write_statistics(self, step):
+        '''
+        Write sampling and swap statistics
+
+        @param step: sampling step
+        @type step: L{int}
+        '''
         
         self.sampling_statistics.write_last(step)
         self.swap_statistics.write_last(step)
             
-    def _send_sample_requests(self, targets):
+    def _send_sample_requests(self, replicas):
+        '''
+        Send requests to replicas to sample from their respective PDFs
 
-        for t in targets:
-            parcel = Parcel(self.name, t, SampleRequest(self.name))
-            self._comm.send(parcel, dest=t)
+        @param replicas: replicas which are supposed to perform a sampling step
+        @type replicas: L{list}  
+        '''
+
+        for replica_name in replicas:
+            parcel = Parcel(self.name, replica_name, SampleRequest(self.name))
+            self._comm.send(parcel, dest=replica_name)
 
     def _send_dump_samples_request(self, smin, smax, offset, dump_step):
+        '''
+        Send requests to write samples to files
+
+        @param smin: first sample index
+        @type smin: L{int}
+
+        @param smax: last sample index
+        @type smax: L{int}
+
+        @param offset: offset which to add to sample index
+        @type offset: L{int}
+
+        @param dump_step: sub-sampling step; write only every dump_step-th sample
+        @type dump_step: L{int}
+        '''
 
         for r in self.replica_names:
             request = DumpSamplesRequest(self.name, smin, smax, offset, dump_step)
             self._comm.send(Parcel(self.name, r, request), dest=r)
         
     def terminate_replicas(self):
+        '''
+        Makes all replicas break from their listening loop and quit
+        '''
 
         for r in self.replica_names:
             parcel = Parcel(self.name, r, DieRequest(self.name))

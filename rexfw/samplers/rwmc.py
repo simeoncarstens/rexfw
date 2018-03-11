@@ -1,23 +1,46 @@
 '''
-Compatible RWMCSampler
+A Metropolis-Hastings sampler as an example for the sampler interface
 '''
 
+import numpy as np
 from collections import namedtuple
 
-from csb.statistics.samplers.mc.singlechain import RWMCSampler
+from rexfw.samplers import AbstractSampler
 
 
 RWMCSampleStats = namedtuple('RWMCSampleStats', 'accepted total stepsize')
 
 
-class CompatibleRWMCSampler(RWMCSampler):
+class RWMCSampler(AbstractSampler):
 
-    def get_last_draw_stats(self):
+    def __init__(self, pdf, state, stepsize, variable_name='x'):
+
+        super(RWMCSampler, self).__init__(pdf, state, variable_name)
         
-        return RWMCSampleStats(self._last_move_accepted, self._nmoves, self.stepsize)
+        self.stepsize = stepsize
+        self._last_move_accepted = False
+        self._n_moves = 0
 
-    # def sample(self):
-    #     import numpy
-    #     from csb.statistics.samplers import State
-    #     self._last_move_accepted = True
-    #     return State(numpy.array([2.0]))
+    @property
+    def last_draw_stats(self):
+        
+        return {self.variable_name: RWMCSampleStats(self._last_move_accepted, 
+                                                    self._n_moves, self.stepsize)}
+
+    def sample(self):
+
+        E_old = -self.pdf.log_prob(self.state)
+        proposal = self.state + np.random.uniform(low=-self.stepsize, high=self.stepsize)
+        E_new = -self.pdf.log_prob(proposal)
+
+        accepted = np.random.random() < np.exp(-(E_new - E_old))
+
+        if accepted:
+            self.state = proposal
+            self._last_move_accepted = True
+        else:
+            self._last_move_accepted = False
+
+        self._n_moves += 1
+
+        return self.state

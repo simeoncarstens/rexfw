@@ -79,10 +79,6 @@ class Replica(object):
             self._sampler._state = value
 
     def _send_state_and_energy(self, request):
-
-        # request = StoreStateEnergyRequest(request.sender, self.state, self.energy)
-        # self._comm.send(Parcel(self.name, request.sender, request), request.sender)
-        ## above was wrong, but didn't lead to any consequences
         
         new_request = StoreStateEnergyRequest(self.name, self.state, self.energy)
         self._comm.send(Parcel(self.name, request.sender, new_request), request.sender)
@@ -107,7 +103,7 @@ class Replica(object):
         res = deepcopy(self._sampler.sample())
         self.state = res
         self.samples.append(deepcopy(res))
-        self.sampler_stats.append([self._n_samples_drawn, self._sampler.get_last_draw_stats()])
+        self.sampler_stats.append([self._n_samples_drawn, self._sampler.last_draw_stats])
         self._update_energy_trace()
         self._increase_sample_counter()
         
@@ -207,7 +203,4 @@ class Replica(object):
         
     def get_energy(self, state):
 
-        if 'position' in dir(state):
-            return -self.pdf.log_prob(state.position)
-        else:
-            return -self.pdf.log_prob(state)
+        return -self.pdf.log_prob(state)

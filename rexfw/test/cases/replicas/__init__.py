@@ -119,7 +119,8 @@ class MockSampler(object):
         
         return self.last_sampled
 
-    def get_last_draw_stats(self):
+    @property
+    def last_draw_stats(self):
 
         return 'nope'
 
