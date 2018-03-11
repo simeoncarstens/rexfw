@@ -4,7 +4,8 @@ import unittest
 import numpy as np
 from collections import deque
 
-from rexfw.proposers import AbstractProposer, GeneralTrajectory, REProposer
+from rexfw.proposers import AbstractProposer, GeneralTrajectory
+from rexfw.proposers.re import REProposer
 from rexfw.test.cases.communicators import MockCommunicator
 
 

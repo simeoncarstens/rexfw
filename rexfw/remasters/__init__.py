@@ -21,8 +21,8 @@ class ExchangeMaster(object):
         Default master object to coordinate RE(NS) swaps
 
         :param name: a name for the object. TODO: atm, has to be 'master0' for the
-                     MPICommunicator to work
-        :type name: String
+                     :class:`.MPICommunicator` to work
+        :type name: str
 
         :param replica_names: a list containing the names of all the replicas
         :type replica_names: list
@@ -65,10 +65,10 @@ class ExchangeMaster(object):
         using information in params (an ExchangeParams object defined in )
 
         :param replica1: name of 1st replica involved in swap
-        :type replica1: String
+        :type replica1: str
 
         :param replica2: name of 2nd replica involved in swap
-        :type replica2: String
+        :type replica2: str
 
         :param params: an :class:`.ExchangeParams` object holding information required
                        to perform the swap
@@ -106,10 +106,10 @@ class ExchangeMaster(object):
         This is to sync everything and really hacky
 
         :param replica1: name of 1st replica involved in swap
-        :type replica1: String
+        :type replica1: str
 
         :param replica2: name of 2nd replica involved in swap
-        :type replica2: String
+        :type replica2: str
         '''
         self._comm.send(Parcel(self.name, replica2,
                                SendGetStateAndEnergyRequest(self.name, replica1)),
@@ -179,7 +179,7 @@ class ExchangeMaster(object):
         Sends a request to accept a proposed swap state.
 
         :param dest: name of destination replica
-        :type dest: String
+        :type dest: str
         '''
         parcel = Parcel(self.name, dest,
                         AcceptBufferedProposalRequest(self.name, True))
@@ -190,7 +190,7 @@ class ExchangeMaster(object):
         Sends a request to reject a proposed swap state.
 
         :param dest: name of destination replica
-        :type dest: String
+        :type dest: str
         '''
         parcel = Parcel(self.name, dest,
                         AcceptBufferedProposalRequest(self.name, False))

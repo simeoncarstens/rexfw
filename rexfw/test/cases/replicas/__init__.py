@@ -262,9 +262,8 @@ class testReplica(unittest.TestCase):
         import numpy as np
         from rexfw.remasters.requests import DumpSamplesRequest
 
-        req = DumpSamplesRequest('remaster45', None, None, None, None)
         self._replica.energy_trace = [3]
-        self._replica._dump_energies(req)
+        self._replica._dump_energies()
 
         fname = '{}energies/{}.npy'.format(self._replica.output_folder, self._replica.name)
         self.assertTrue(os.path.exists(fname))
