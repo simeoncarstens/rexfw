@@ -20,30 +20,30 @@ class ExchangeMaster(object):
         '''
         Default master object to coordinate RE(NS) swaps
 
-        @param name: a name for the object. TODO: atm, has to be 'master0' for the
+        :param name: a name for the object. TODO: atm, has to be 'master0' for the
                      MPICommunicator to work
-        @type name: L{String}
+        :type name: String
 
-        @param replica_names: a list containing the names of all the replicas
-        @type replica_names: L{list}
+        :param replica_names: a list containing the names of all the replicas
+        :type replica_names: list
 
-        @param swap_params: a list of L{ExchangeParams} objects
-        @type swap_params: L{list}
+        :param swap_params: a list of :class:`.ExchangeParams` objects
+        :type swap_params: list
 
-        @param sampling_statistics: a L{Statistics} object to log sampling statistics like
+        :param sampling_statistics: a :class:`.Statistics` object to log sampling statistics like
                                     acceptance rates etc.
-        @type sampling_statistics: L{Statistics}
+        :type sampling_statistics: :class:`.Statistics`
 
-        @param swap_statistics: a L{REStatistics} object to log replica exchange statistics
+        :param swap_statistics: a :class:`.REStatistics` object to log replica exchange statistics
                                 like acceptance rates etc.
-        @type swap_statistics: L{REStatistics}
+        :type swap_statistics: :class:`.REStatistics`
 
-        @param comm: a communicator object in charge of communicating with the replicas
-        @type comm: L{AbstractCommunicator}
+        :param comm: a communicator object in charge of communicating with the replicas
+        :type comm: AbstractCommunicator
 
-        @param swap_list_generator: an object which creates swap lists with items
+        :param swap_list_generator: an object which creates swap lists with items
                                     consisting of two replica names and a parameter object            
-        @type swap_list_generator: L{AbstractSwapListGenerator}
+        :type swap_list_generator: :class:`.AbstractSwapListGenerator`
         '''
         self.name = name
         self.replica_names = replica_names
@@ -64,15 +64,15 @@ class ExchangeMaster(object):
         Sends a request to replica1 telling it to propose a state for replica2
         using information in params (an ExchangeParams object defined in )
 
-        @param replica1: name of 1st replica involved in swap
-        @type replica1: L{String}
+        :param replica1: name of 1st replica involved in swap
+        :type replica1: String
 
-        @param replica2: name of 2nd replica involved in swap
-        @type replica2: L{String}
+        :param replica2: name of 2nd replica involved in swap
+        :type replica2: String
 
-        @param params: an L{ExchangeParams} object holding information required
+        :param params: an :class:`.ExchangeParams` object holding information required
                        to perform the swap
-        @type params: L{ExchangeParams}
+        :type params: :class:`.ExchangeParams`
         '''
         
         request = ProposeRequest(self.name, replica2, params)
@@ -82,12 +82,12 @@ class ExchangeMaster(object):
         '''
         Attempts exchanges defined in swap_list. 
 
-        @param swap_list: a list of list in which each list element contains two replica  
-                          names involved in a swap an an L{ExchangeParams} object
-        @type swap_list: L{list}
+        :param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an :class:`.ExchangeParams` object
+        :type swap_list: list
 
-        @return: three lists: acceptance statuses (0 / 1), works  and heats
-        @rtype: L{list}
+        :return: three lists: acceptance statuses (0 / 1), works  and heats
+        :rtype: list
         '''
         
         self._trigger_proposal_calculation(swap_list)
@@ -105,11 +105,11 @@ class ExchangeMaster(object):
         state / energies have been set.
         This is to sync everything and really hacky
 
-        @param replica1: name of 1st replica involved in swap
-        @type replica1: L{String}
+        :param replica1: name of 1st replica involved in swap
+        :type replica1: String
 
-        @param replica2: name of 2nd replica involved in swap
-        @type replica2: L{String}
+        :param replica2: name of 2nd replica involved in swap
+        :type replica2: String
         '''
         self._comm.send(Parcel(self.name, replica2,
                                SendGetStateAndEnergyRequest(self.name, replica1)),
@@ -120,9 +120,9 @@ class ExchangeMaster(object):
         '''
         Makes all involved replicas propose states.
 
-        @param swap_list: a list of list in which each list element contains two replica  
-                          names involved in a swap an an L{ExchangeParams} object
-        @type swap_list: L{list}
+        :param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an :class:`.ExchangeParams` object
+        :type swap_list: list
         '''
 
         for i, (replica1, replica2, params) in enumerate(swap_list):
@@ -138,12 +138,12 @@ class ExchangeMaster(object):
         '''
         Receives works from all swapping replicas.
         
-        @param swap_list: a list of list in which each list element contains two replica  
-                          names involved in a swap an an L{ExchangeParams} object
-        @type swap_list: L{list}
+        :param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an :class:`.ExchangeParams` object
+        :type swap_list: list
 
-        @return: lists of works and heats
-        @rtype: L{tuple}
+        :return: lists of works and heats
+        :rtype: list
         '''
 
         works = np.zeros((len(swap_list), 2))
@@ -162,14 +162,14 @@ class ExchangeMaster(object):
         '''
         Determines whether swaps are being accepted or rejected
 
-        @param works: array of works with shape (number of swaps, 2),
+        :param works: array of works with shape (number of swaps, 2),
                       the 2nd dimension are the works for forward- and backward
                       trajectory
-        @type works: L{numpy.ndarray}
+        :type works: numpy.ndarray
 
-        @return: array of Boolean (0 / 1) values indicating whether swaps have
+        :return: array of Boolean (0 / 1) values indicating whether swaps have
                  been accepted (1) or rejected (0)              
-        @rtype: L{numpy.ndarray}
+        :rtype: numpy.ndarray
         '''
 
         return np.exp(-np.sum(works,1)) > np.random.uniform(size=len(works))
@@ -178,8 +178,8 @@ class ExchangeMaster(object):
         '''
         Sends a request to accept a proposed swap state.
 
-        @param dest: name of destination replica
-        @type dest: L{String}
+        :param dest: name of destination replica
+        :type dest: String
         '''
         parcel = Parcel(self.name, dest,
                         AcceptBufferedProposalRequest(self.name, True))
@@ -189,8 +189,8 @@ class ExchangeMaster(object):
         '''
         Sends a request to reject a proposed swap state.
 
-        @param dest: name of destination replica
-        @type dest: L{String}
+        :param dest: name of destination replica
+        :type dest: String
         '''
         parcel = Parcel(self.name, dest,
                         AcceptBufferedProposalRequest(self.name, False))
@@ -200,13 +200,13 @@ class ExchangeMaster(object):
         '''
         Sends accept / reject exchange requests to all involved replicas
 
-        @param swap_list: a list of list in which each list element contains two replica  
-                          names involved in a swap an an L{ExchangeParams} object
-        @type swap_list: L{list}
+        :param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an :class:`.ExchangeParams` object
+        :type swap_list: list
 
-        @param acc: array containing boolean (0 / 1) values indicating which
+        :param acc: array containing boolean (0 / 1) values indicating which
                     swaps have been accepted and which haven't
-        @type acc: L{numpy.ndarray}
+        :type acc: numpy.ndarray
         '''
         for i, (replica1, replica2, params) in enumerate(swap_list):
             accept_exchange = acc[i]
@@ -225,16 +225,16 @@ class ExchangeMaster(object):
         '''
         Updates replica exchange statistics.
 
-        @param swap_list: a list of list in which each list element contains two replica  
-                          names involved in a swap an an L{ExchangeParams} object
-        @type swap_list: L{list}
+        :param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an :class:`.ExchangeParams` object
+        :type swap_list: list
 
-        @param results: a two-dimensional list of shape (number of swaps, 3), in which
+        :param results: a two-dimensional list of shape (number of swaps, 3), in which
                         the 2nd dimension is (0 / 1 (reject / accept), works, heats)
-        @type results: L{list}
+        :type results: list
 
-        @param step: the sampling step at which the swaps were performed
-        @type step: L{int}
+        :param step: the sampling step at which the swaps were performed
+        :type step: int
         '''
 
         ## TODO: this shouldn't be here...
@@ -249,12 +249,12 @@ class ExchangeMaster(object):
         '''
         Creates the swap list for a given step
 
-        @param step: the sampling step for which to create the swap list
-        @type step: L{int}
+        :param step: the sampling step for which to create the swap list
+        :type step: int
 
-        @return: a list of list in which each list element contains two replica  
-                 names involved in a swap an an L{ExchangeParams} object
-        @rtype: L{list}
+        :return: a list of list in which each list element contains two replica  
+                 names involved in a swap an an :class:`.ExchangeParams` object
+        :rtype: list
         '''
 
         return self._swap_list_generator.generate_swap_list(step=step)
@@ -264,12 +264,12 @@ class ExchangeMaster(object):
         For a given swap list, calculate which replicas do NOT perform swaps
         and thus will continue normal sampling.
 
-        @param swap_list: a list of list in which each list element contains two replica  
-                          names involved in a swap an an L{ExchangeParams} object
-        @type swap_list: L{list}
+        :param swap_list: a list of list in which each list element contains two replica  
+                          names involved in a swap an an :class:`.ExchangeParams` object
+        :type swap_list: list
 
-        @return: a list of replica names
-        @rtype: L{list}
+        :return: a list of replica names
+        :rtype: list
         '''
 
         ex_replicas = [[x[0], x[1]] for x in swap_list]
@@ -287,29 +287,29 @@ class ExchangeMaster(object):
         Furthermore, in given intervals, statistics are updated and statistics
         and samples are written to files.
 
-        @param n_iterations: number of sampling steps to perform
-        @type n_iterations: L{int}
+        :param n_iterations: number of sampling steps to perform
+        :type n_iterations: int
 
-        @param swap_interval: the interval with which to perform swaps
-        @type swap_interval: L{int}
+        :param swap_interval: the interval with which to perform swaps
+        :type swap_interval: int
 
-        @param status_interval: the interval with which to write sampling statistics
-        @type status_interval: L{int}
+        :param status_interval: the interval with which to write sampling statistics
+        :type status_interval: int
 
-        @param dump_interval: the interval with which to write samples to files
-        @type dump_interval: L{int}
+        :param dump_interval: the interval with which to write samples to files
+        :type dump_interval: int
 
-        @param offset: an offset to add to the sample counter when writing samples
+        :param offset: an offset to add to the sample counter when writing samples
                        to files. This allows to continue simulations.
-        @type offset: L{int}
+        :type offset: int
 
-        @param dump_step: allows to perform sub-sampling: write only every dump_step-th
+        :param dump_step: allows to perform sub-sampling: write only every dump_step-th
                           sample to a file
-        @type dump_step: L{int}
+        :type dump_step: int
 
-        @param statistics_update_interval: interval with which to update sampling
+        :param statistics_update_interval: interval with which to update sampling
                                            statistics
-        @type statistics_update_interval: L{int}
+        :type statistics_update_interval: int
         '''
 
         for step in xrange(n_iterations):
@@ -338,8 +338,8 @@ class ExchangeMaster(object):
         '''
         Send requests to replicas to send sampling statistics to this master object.
 
-        @param replica: replica names
-        @type replicas: L{list}
+        :param replica: replica names
+        :type replicas: list
         '''
 
         for r in replicas:
@@ -350,8 +350,8 @@ class ExchangeMaster(object):
         '''
         Receive sampling statistics from replicas and update statistics object
 
-        @param replicas: replica names
-        @type replicas: L{list}
+        :param replicas: replica names
+        :type replicas: list
         '''
 
         for r in replicas:
@@ -363,8 +363,8 @@ class ExchangeMaster(object):
         '''
         Update sampling statistics
 
-        @params which_replicas: replicas for which to update statistics
-        @type which_replicas: L{list}
+        :params which_replicas: replicas for which to update statistics
+        :type which_replicas: list
         '''
         
         if which_replicas is None:
@@ -377,8 +377,8 @@ class ExchangeMaster(object):
         '''
         Write sampling and swap statistics
 
-        @param step: sampling step
-        @type step: L{int}
+        :param step: sampling step
+        :type step: int
         '''
         
         self.sampling_statistics.write_last(step)
@@ -388,8 +388,8 @@ class ExchangeMaster(object):
         '''
         Send requests to replicas to sample from their respective PDFs
 
-        @param replicas: replicas which are supposed to perform a sampling step
-        @type replicas: L{list}  
+        :param replicas: replicas which are supposed to perform a sampling step
+        :type replicas: list  
         '''
 
         for replica_name in replicas:
@@ -400,17 +400,17 @@ class ExchangeMaster(object):
         '''
         Send requests to write samples to files
 
-        @param smin: first sample index
-        @type smin: L{int}
+        :param smin: first sample index
+        :type smin: int
 
-        @param smax: last sample index
-        @type smax: L{int}
+        :param smax: last sample index
+        :type smax: int
 
-        @param offset: offset which to add to sample index
-        @type offset: L{int}
+        :param offset: offset which to add to sample index
+        :type offset: int
 
-        @param dump_step: sub-sampling step; write only every dump_step-th sample
-        @type dump_step: L{int}
+        :param dump_step: sub-sampling step; write only every dump_step-th sample
+        :type dump_step: int
         '''
 
         for r in self.replica_names:
