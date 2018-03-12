@@ -112,7 +112,7 @@ class Replica(object):
         Returns the current state of the replica (and thus the sampler)
 
         :return: current state of replica (and sampler)
-        :rtype: depends on you
+        :rtype: depends on your application
         ''' 
         return self._state
     @state.setter
@@ -121,7 +121,7 @@ class Replica(object):
         Sets the replica and sampler state
 
         :param value: value to set states to
-        :type value: depends on you
+        :type value: depends on your application
         '''
         self._state = value
         if not self._sampler is None:
@@ -260,7 +260,7 @@ class Replica(object):
         Sends works and heats corresponding to a swap proposal to the master object
 
         :param proposal: a state proposed for swapping
-        :type proposal: depends on you
+        :type proposal: depends on your application
         '''
         self._comm.send(Parcel(self.name, self._current_master, 
                                (float(proposal.work), float(proposal.heat))), 
@@ -290,7 +290,7 @@ class Replica(object):
         :type request: :class:`.ProposeRequest`
 
         :return: a swap proposal state
-        :rtype: depends on you
+        :rtype: depends on your application
         '''
 
         partner_name = request.partner
@@ -352,7 +352,7 @@ class Replica(object):
         PDF evaluated at the current state
 
         :return: the current replica energy
-        :rtype: depends on you
+        :rtype: depends on your application
         '''
 
         return self.get_energy(self.state)
@@ -363,6 +363,6 @@ class Replica(object):
 
         :param state: state for which to evaluate the negative log-probability of
                       the replica's PDF
-        :type state: depends on you
+        :type state: depends on your application
         '''
         return -self.pdf.log_prob(state)

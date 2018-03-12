@@ -19,6 +19,9 @@ class AbstractAverage(LoggedQuantity):
 
     @abstractmethod
     def _calculate_new_value(self, info):
+        '''
+        Calculates a new average value from the information given in info
+        '''
         pass
         
     def update(self, step, stats):
@@ -29,6 +32,7 @@ class AbstractAverage(LoggedQuantity):
             self._n_contributions += 1
             self._untouched = False
         else:
+            ## calculates average from previous average and new information
             new = self.current_value * self._n_contributions / float(self._n_contributions + 1)
             self._n_contributions += 1
             new += new_value / float(self._n_contributions)

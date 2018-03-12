@@ -6,6 +6,11 @@ Convenient functions creating default objects to simplify standard tasks with th
 def create_default_RE_params(n_replicas):
     '''
     Creates default RE exchange parameters
+
+    :param int n_replicas: the number of replicas
+
+    :return: a list of parameter objects holding information required to perform swaps
+    :rtype: list of :class:`.ExchangeParams`
     '''
 
     from rexfw.slgenerators import ExchangeParams
@@ -86,6 +91,12 @@ def create_default_stats_elements(replica_names, variable_name):
     '''
     Creates default sampling statistics "elements", each representing
     a tracked quantity such as acceptance rate, step size etc.
+
+    :param replica_names: a list of all replica names
+    :type replica_names: list
+
+    :return: MCMC acceptance rate, RE acceptance rate and step size quantity objects
+    :rtype: tuple
     '''
 
     from rexfw.convenience.statistics import create_default_MCMC_averages
@@ -102,6 +113,12 @@ def create_default_stats_writers(sim_path, variable_name):
     '''
     Creates default statistics writers, which print sampling statistics
     on the screen or write it to a text file
+
+    :param str sim_path: the output folder
+    :param str variable_name: the name of the only variable to be sampled
+
+    :return: default MCMC and RE statistics writers
+    :rtype: tuple
     '''
     
     from rexfw.statistics.writers import StandardConsoleREStatisticsWriter
@@ -128,7 +145,18 @@ def create_default_stats_writers(sim_path, variable_name):
 
 def setup_default_re_master(n_replicas, sim_path, comm):
     '''
-    Creates a default REMaster object for Replica Exchange
+    Creates a default :class:`.ExchangeMaster` object for Replica Exchange. This should suffice
+    for most applications.
+
+    :param int n_replicas: the number of replicas
+    :param str sim_path: the folder where simulation output will be stored
+    
+    :param comm: a :class:`.AbstractCommunicator` object responsible for communication
+                 with the replicas
+    :type comm: :class:`.AbstractCommunicator`
+
+    :return: a for all practical purposes sufficient :class:`.ExchangeMaster` object
+    :rtype: :class:`.ExchangeMaster`
     '''
 
     from rexfw.remasters import ExchangeMaster
@@ -164,6 +192,35 @@ def setup_default_re_master(n_replicas, sim_path, comm):
 
 def setup_default_replica(init_state, pdf, sampler_class, sampler_params, 
                           output_folder, comm, rank):
+    '''
+    Creates a default :class:`.Replica` object for replica exchange. This should suffice
+    for most applications.
+
+    :param init_state: initial state for the replica
+    :type init_state: depends on your application
+
+    :param pdf: a :class:`.AbstractPDF` object which describes the probability density
+                the replica will sample
+    :type pdf: :class:`.AbstractPDF`
+
+    :param sampler_class: the class of the sampler used to sample from this replica's
+                          PDF
+    :type sampler_class: :class:`.AbstractSampler`
+
+    :param dict sampler_params: a dict containing additional keyword arguments your
+                                sampler might need
+                                
+    :param str output_folder: the folder where simulation output will be stored
+    
+    :param comm: a :class:`.AbstractCommunicator` object responsible for communication
+                 with the master object
+    :type comm: :class:`.AbstractCommunicator`
+
+    :param int rank: the index of this replica, usually 1, 2, ...
+    
+    :return: a for all practical purposes sufficient :class:`.Replica` object
+    :rtype: :class:`.Replica`
+    '''
 
     from rexfw.replicas import Replica
     ## every kind of RE / RENS has its own proposer classes which 

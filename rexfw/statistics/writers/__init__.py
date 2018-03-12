@@ -1,5 +1,7 @@
 '''
 StatisticsWriter classes which... well... write statistics to stdout / files / ...
+
+ATTENTION: some of these classes expect replica objects to be named replica1, replica2, ...
 '''
 
 import sys
@@ -10,17 +12,43 @@ from abc import ABCMeta, abstractmethod
 class AbstractStatisticsWriter(object):
 
     def __init__(self, separator, variables_to_write=[], quantities_to_write=[]):
+        '''
+        Base class for classes which write sampling statistics to stdout, files, ...
 
+        :param str separator: separator string separating values of different
+                              quantities in written output
+
+        :param variables_to_write: list of sampling variable names for which to
+                                   write statistics
+        :type variables_to_write: list of str
+
+        :param quantities_to_write: list of :class:`.LoggedQuantity` objects for which to
+                                    write statistics
+        :type quantities_to_write: list of :class:`.LoggedQuantity`
+        '''
         self._separator = separator
         self.variables_to_write = variables_to_write
         self.quantities_to_write = quantities_to_write
 
     @abstractmethod
     def write(self, step, elements):
+        '''
+        Writes quantities in elements for a given step
+
+        :param int step: sampling step
+        :param elements: list of quantities to write
+        :type elements: list of :class:`.LoggedQuantity`
+        '''
         pass
     
     def _write_single_quantity_stats(self, elements):
+        '''
+        Writes a single line to stdout / file, e.g., all sampler step sizes
+        which would be stored in elements
 
+        :param elements: quantities to write
+        :type elements: list of :class:`.LoggedQuantity`
+        '''
         self._write_quantity_class_header(elements[0])
         for e in self._sort_quantities(elements):
             self._outstream.write(self._format(e) + self._separator)
@@ -32,6 +60,17 @@ class ConsoleStatisticsWriter(AbstractStatisticsWriter):
     __metaclass__ = ABCMeta
     
     def __init__(self, variables_to_write=[], quantities_to_write=[]):
+        '''
+        Writes sampling statistics to stdout
+
+        :param variables_to_write: list of sampling variable names for which to
+                                   write statistics
+        :type variables_to_write: list of str
+
+        :param quantities_to_write: list of :class:`.LoggedQuantity` objects for which to
+                                    write statistics
+        :type quantities_to_write: list of :class:`.LoggedQuantity`
+        '''
 
         super(ConsoleStatisticsWriter, self).__init__(' ', variables_to_write,
                                                       quantities_to_write)
@@ -39,21 +78,64 @@ class ConsoleStatisticsWriter(AbstractStatisticsWriter):
         
     @abstractmethod
     def _format(self, quantity):
+        '''
+        Formats the numeric value of a quantity for output
+
+        :param quantity: a quantity whose numeric value will be written
+        :type quantity: :class:`.LoggedQuantity`
+
+        :return: a string representing a formatted numerical value
+        :rtype: str
+        '''
         pass
 
     @abstractmethod
     def _sort_quantities(self, quantities):
+        '''
+        Sorts quantities for a single line by, e.g., replica name
+
+        :param quantities: the logged quantitis which will be written out
+        :type quantities: list of :class:`.LoggedQuantity` objects
+
+        :return: the sorted quantities list
+        :rtype: list
+        '''
         pass
     
     @abstractmethod
     def _write_step_header(self, step):
+        '''
+        Writes a header for a given sampling step, e.g., ### step number ###
+
+        :param int step: a sampling step
+
+        :return: the header prefacing the ouptut for a given sampling step
+        :rtype: str
+        '''
         pass
 
     @abstractmethod
-    def _write_quantity_class_header(self, class_name):
+    def _write_quantity_class_header(self, quantity):
+        '''
+        Writes a "header" (line beginning) for a given type of quantity,
+        e.g., "myvariable p_acc"
+
+        :param quantity: a quantity containing the information needed
+        :type quantity: :class:`.LoggedQuantity`
+
+        :return: a preface for a line with similar sampling statistics
+        :rtype: str
+        '''
         pass
 
     def _write_all_but_header(self, quantities):
+        '''
+        Writes all sampling statistics in quantities, but not the line header
+
+        :param quantities: a list of similar :class:`.LoggedQuantity` objects, e.g.,
+                           all step sizes
+        :type quantities: list of :class:`.LoggedQuantity`
+        '''
 
         for quantity_name in list(set([quantity.name for quantity in quantities])):
             quantities2 = quantities.select(name=quantity_name)
@@ -67,7 +149,17 @@ class ConsoleStatisticsWriter(AbstractStatisticsWriter):
 
 class StandardConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
     '''
-    Only prints acceptance rate and stepsize
+    Writes only acceptance rate and step sizes to stdout.
+    Remember to set quantity names correctly, that is, to
+    "acceptance rate" and "stepsize"
+
+    :param variables_to_write: list of sampling variable names for which to
+                               write statistics
+    :type variables_to_write: list of str
+
+    :param quantities_to_write: list of :class:`.LoggedQuantity` objects for which to
+                                write statistics
+    :type quantities_to_write: list of :class:`.LoggedQuantity`
     '''
 
     def _format(self, quantity):
@@ -104,6 +196,11 @@ class StandardConsoleMCMCStatisticsWriter(ConsoleStatisticsWriter):
 class StandardConsoleREStatisticsWriter(ConsoleStatisticsWriter):
 
     def __init__(self):
+        '''
+        Writes replica exchange acceptance rates to stdout.
+        Remember to set quantity names correctly, that is, to
+        "acceptance rate"
+        '''
 
         super(StandardConsoleREStatisticsWriter, self).__init__(quantities_to_write=['acceptance rate'])
 
@@ -130,6 +227,19 @@ class AbstractFileStatisticsWriter(AbstractStatisticsWriter):
     __metaclass__ = ABCMeta
     
     def __init__(self, filename, variables_to_write=[], quantities_to_write=[]):
+        '''
+        Writes sampling statistics to a file.
+
+        :param str filename: path to file to write sampling statistics to
+
+        :param variables_to_write: list of sampling variable names for which to
+                                   write statistics
+        :type variables_to_write: list of str
+
+        :param quantities_to_write: list of :class:`.LoggedQuantity` objects for which to
+                                    write statistics
+        :type quantities_to_write: list of :class:`.LoggedQuantity`
+        '''
 
         super(AbstractFileStatisticsWriter, self).__init__('\t',
                                                            variables_to_write,
@@ -155,6 +265,19 @@ class AbstractFileStatisticsWriter(AbstractStatisticsWriter):
 class StandardFileMCMCStatisticsWriter(AbstractFileStatisticsWriter):
 
     def __init__(self, filename, variables_to_write=[], quantities_to_write=[]):
+        '''
+        Writes acceptance rates and step sizes to a file.        
+
+        :param str filename: path to file to write sampling statistics to
+
+        :param variables_to_write: list of sampling variable names for which to
+                                   write statistics
+        :type variables_to_write: list of str
+
+        :param quantities_to_write: list of :class:`.LoggedQuantity` objects for which to
+                                    write statistics
+        :type quantities_to_write: list of :class:`.LoggedQuantity`
+        '''
         
         super(StandardFileMCMCStatisticsWriter, self).__init__(filename,
                                                                variables_to_write,
@@ -194,6 +317,19 @@ class StandardFileMCMCStatisticsWriter(AbstractFileStatisticsWriter):
         
 
 class StandardFileREStatisticsWriter(AbstractFileStatisticsWriter):
+    '''
+    Writes replica exchange acceptance rates to a file.
+
+    :param str filename: path to file to write sampling statistics to
+
+    :param variables_to_write: list of sampling variable names for which to
+                               write statistics
+    :type variables_to_write: list of str
+
+    :param quantities_to_write: list of :class:`.LoggedQuantity` objects for which to
+                                write statistics
+    :type quantities_to_write: list of :class:`.LoggedQuantity`
+    '''
 
     def __init__(self, filename, quantities_to_write=[]):
                 
@@ -235,9 +371,14 @@ class StandardFileREStatisticsWriter(AbstractFileStatisticsWriter):
         self._write_single_quantity_stats(quantities)
 
 
-class StandardFileREWorksStatisticsWriter(object):
+class StandardFileREWorksStatisticsWriter(AbstractStatisticsWriter):
 
     def __init__(self, outfolder):
+        '''
+        Writes works expended during replica exchange swap trajectories to a file.        
+
+        :param str outfolder: path to folder to write works to
+        '''
 
         self._outfolder = outfolder
         self._quantities_to_write = ['re_works']
@@ -251,7 +392,12 @@ class StandardFileREWorksStatisticsWriter(object):
                 dump(e.values, opf)
 
 
-class StandardFileREHeatsStatisticsWriter(object):
+class StandardFileREHeatsStatisticsWriter(AbstractStatisticsWriter):
+    '''
+    Writes heats produced during replica exchange swap trajectories to a file.        
+
+    :param str outfolder: path to folder to write heats to
+    '''
 
     def __init__(self, outfolder):
 

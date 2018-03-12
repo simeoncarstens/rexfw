@@ -1,15 +1,19 @@
 '''
+Simple parameter objects holding information :class:`.AbstractProposer` objects
+might need to calculate proposals
 '''
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 
 class AbstractProposerParams(object):
-
-    __metaclass__ = ABCMeta
     
     @abstractmethod
     def reverse(self):
+        '''
+        Reverses certain parameters to reuse this object for both
+        forward and reverse trajectories
+        '''
         pass
 
 

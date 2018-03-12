@@ -1,5 +1,5 @@
 '''
-Requests replicas can send
+Requests replicas can send to :class:`.ExchangeMaster` or other :class:`.Replica` objects
 '''
 
 from collections import namedtuple

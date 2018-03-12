@@ -54,10 +54,10 @@ class AbstractProposer(object):
         :type local_replica: :class:`.Replica`
 
         :param partner_state: the state of the exchange partner
-        :type partner_state: depends on you
+        :type partner_state: depends on your application
 
         :param partner_energy: the exchange partner's current energy
-        :type partner_energy: depends on you
+        :type partner_energy: depends on your application
 
         :param params: parameters the proposer may need
                        to calculate a proposal
