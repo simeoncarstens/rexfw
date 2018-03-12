@@ -50,7 +50,8 @@ class AbstractProposer(object):
         Calculates a proposal using information from the replica, the exchange partner
         state and energy, and possibly other information stored in params
 
-        :param :class:`.Replica` local_replica: the replica which is supposed to propose a state
+        :param local_replica: the replica which is supposed to propose a state
+        :type local_replica: :class:`.Replica`
 
         :param partner_state: the state of the exchange partner
         :type partner_state: depends on you
@@ -58,8 +59,9 @@ class AbstractProposer(object):
         :param partner_energy: the exchange partner's current energy
         :type partner_energy: depends on you
 
-        :param :class:`.AbstractProposerParams` params: parameters the proposer may need
-                                                        to calculate a proposal
+        :param params: parameters the proposer may need
+                       to calculate a proposal
+        :type params: :class:`.AbstractProposerParams`
         '''
         pass
 
