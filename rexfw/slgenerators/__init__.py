@@ -4,15 +4,13 @@ Swap list generators generating lists of triples: two replica names and an
 swap their states and which parameters to use for the swap
 '''
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections import namedtuple
 
 ExchangeParams = namedtuple('ExchangeParams', 'proposers proposer_params')
 
 
 class AbstractSwapListGenerator(object):
-
-    __metaclass__ = ABCMeta
     
     @abstractmethod
     def generate_swap_list(self, step):

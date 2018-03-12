@@ -2,7 +2,7 @@
 Replica classes which sample from a single PDF
 '''
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import abstractmethod, abstractproperty
 
 from rexfw import Parcel
 from rexfw.replicas.requests import GetStateAndEnergyRequest, StoreStateEnergyRequest

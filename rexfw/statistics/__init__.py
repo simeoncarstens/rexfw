@@ -2,7 +2,7 @@
 Statistics classes responsible for tracking sampling statistics
 '''
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import abstractmethod, abstractproperty
 
 from rexfw import Parcel
 from rexfw.statistics.writers import ConsoleStatisticsWriter

@@ -2,14 +2,12 @@
 Classes representing runtime-averages of quantities such as acceptance rates
 '''
 
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod
 
 from rexfw.statistics.logged_quantities import LoggedQuantity
 
 
 class AbstractAverage(LoggedQuantity):
-
-    __metaclass__ = ABCMeta
     
     def __init__(self, origins, stats_fields, name, variable_name=None):
 

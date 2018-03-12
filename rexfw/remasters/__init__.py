@@ -9,7 +9,7 @@ from rexfw.remasters.requests import SampleRequest, DieRequest, ProposeRequest, 
 from rexfw.remasters.requests import GetStateAndEnergyRequest_master, SendGetStateAndEnergyRequest
 from rexfw.remasters.requests import DumpSamplesRequest, SendStatsRequest
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 
 class ExchangeMaster(object):

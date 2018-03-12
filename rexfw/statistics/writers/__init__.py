@@ -6,7 +6,7 @@ ATTENTION: some of these classes expect replica objects to be named replica1, re
 
 import sys
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 
 class AbstractStatisticsWriter(object):
@@ -57,8 +57,6 @@ class AbstractStatisticsWriter(object):
 
 class ConsoleStatisticsWriter(AbstractStatisticsWriter):
 
-    __metaclass__ = ABCMeta
-    
     def __init__(self, variables_to_write=[], quantities_to_write=[]):
         '''
         Writes sampling statistics to stdout
@@ -224,8 +222,6 @@ class StandardConsoleREStatisticsWriter(ConsoleStatisticsWriter):
         
 class AbstractFileStatisticsWriter(AbstractStatisticsWriter):
 
-    __metaclass__ = ABCMeta
-    
     def __init__(self, filename, variables_to_write=[], quantities_to_write=[]):
         '''
         Writes sampling statistics to a file.

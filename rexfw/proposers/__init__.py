@@ -5,7 +5,7 @@ for RE, RENS, ... swaps
 
 import numpy
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 from csb.statistics.samplers import State
 import csb.statistics.samplers.mc.neqsteppropagator as noneqprops
@@ -34,8 +34,6 @@ class GeneralTrajectory(list):
         
         
 class AbstractProposer(object):
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, name):
         '''
