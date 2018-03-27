@@ -1,0 +1,138 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>rexfw.test.cases.statistics.writers package &#8212; rexfw 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="rexfw-test-cases-statistics-writers-package">
+<h1>rexfw.test.cases.statistics.writers package<a class="headerlink" href="#rexfw-test-cases-statistics-writers-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-rexfw.test.cases.statistics.writers">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-rexfw.test.cases.statistics.writers" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="rexfw.test.cases.statistics.writers.MockStatisticsWriter">
+<em class="property">class </em><code class="descclassname">rexfw.test.cases.statistics.writers.</code><code class="descname">MockStatisticsWriter</code><a class="headerlink" href="#rexfw.test.cases.statistics.writers.MockStatisticsWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="rexfw.statistics.writers.html#rexfw.statistics.writers.AbstractStatisticsWriter" title="rexfw.statistics.writers.AbstractStatisticsWriter"><code class="xref py py-class docutils literal notranslate"><span class="pre">rexfw.statistics.writers.AbstractStatisticsWriter</span></code></a></p>
+<dl class="method">
+<dt id="rexfw.test.cases.statistics.writers.MockStatisticsWriter._write_single_quantity_stats">
+<code class="descname">_write_single_quantity_stats</code><span class="sig-paren">(</span><em>elements</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.test.cases.statistics.writers.MockStatisticsWriter._write_single_quantity_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a single line to stdout / file, e.g., all sampler step sizes
+which would be stored in elements</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>elements</strong> (list of <a class="reference internal" href="rexfw.statistics.html#rexfw.statistics.logged_quantities.LoggedQuantity" title="rexfw.statistics.logged_quantities.LoggedQuantity"><code class="xref py py-class docutils literal notranslate"><span class="pre">LoggedQuantity</span></code></a>) – quantities to write</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="rexfw.test.cases.statistics.writers.MockStatisticsWriter.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>step</em>, <em>elements</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.test.cases.statistics.writers.MockStatisticsWriter.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes quantities in elements for a given step</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>step</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – sampling step</li>
+<li><strong>elements</strong> (list of <a class="reference internal" href="rexfw.statistics.html#rexfw.statistics.logged_quantities.LoggedQuantity" title="rexfw.statistics.logged_quantities.LoggedQuantity"><code class="xref py py-class docutils literal notranslate"><span class="pre">LoggedQuantity</span></code></a>) – list of quantities to write</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">rexfw.test.cases.statistics.writers package</a><ul>
+<li><a class="reference internal" href="#module-rexfw.test.cases.statistics.writers">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/rexfw.test.cases.statistics.writers.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Simeon Carstens.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/rexfw.test.cases.statistics.writers.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

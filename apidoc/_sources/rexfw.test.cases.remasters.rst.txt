@@ -1,0 +1,22 @@
+rexfw.test.cases.remasters package
+==================================
+
+Submodules
+----------
+
+rexfw.test.cases.remasters.likelihoods module
+---------------------------------------------
+
+.. automodule:: rexfw.test.cases.remasters.likelihoods
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: rexfw.test.cases.remasters
+    :members:
+    :undoc-members:
+    :show-inheritance:

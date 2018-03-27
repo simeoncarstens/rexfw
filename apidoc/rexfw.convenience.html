@@ -1,0 +1,278 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>rexfw.convenience package &#8212; rexfw 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="rexfw-convenience-package">
+<h1>rexfw.convenience package<a class="headerlink" href="#rexfw-convenience-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-rexfw.convenience.statistics">
+<span id="rexfw-convenience-statistics-module"></span><h2>rexfw.convenience.statistics module<a class="headerlink" href="#module-rexfw.convenience.statistics" title="Permalink to this headline">¶</a></h2>
+<p>Some functions creating default statistics elements</p>
+<dl class="function">
+<dt id="rexfw.convenience.statistics.create_default_MCMC_averages">
+<code class="descclassname">rexfw.convenience.statistics.</code><code class="descname">create_default_MCMC_averages</code><span class="sig-paren">(</span><em>replica_names</em>, <em>variable_name='x'</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.statistics.create_default_MCMC_averages" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.statistics.create_default_RE_averages">
+<code class="descclassname">rexfw.convenience.statistics.</code><code class="descname">create_default_RE_averages</code><span class="sig-paren">(</span><em>replica_names</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.statistics.create_default_RE_averages" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.statistics.create_default_heats">
+<code class="descclassname">rexfw.convenience.statistics.</code><code class="descname">create_default_heats</code><span class="sig-paren">(</span><em>replica_names</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.statistics.create_default_heats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.statistics.create_default_stepsizes">
+<code class="descclassname">rexfw.convenience.statistics.</code><code class="descname">create_default_stepsizes</code><span class="sig-paren">(</span><em>replica_names</em>, <em>variable_name='x'</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.statistics.create_default_stepsizes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.statistics.create_default_works">
+<code class="descclassname">rexfw.convenience.statistics.</code><code class="descname">create_default_works</code><span class="sig-paren">(</span><em>replica_names</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.statistics.create_default_works" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-rexfw.convenience">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-rexfw.convenience" title="Permalink to this headline">¶</a></h2>
+<p>Convenient functions creating default objects to simplify standard tasks with this framework</p>
+<dl class="function">
+<dt id="rexfw.convenience.create_default_AMDRENS_params">
+<code class="descclassname">rexfw.convenience.</code><code class="descname">create_default_AMDRENS_params</code><span class="sig-paren">(</span><em>schedule</em>, <em>n_steps</em>, <em>timesteps</em>, <em>collision_probability=0.1</em>, <em>update_interval=1</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.create_default_AMDRENS_params" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.create_default_HMCStepRENS_params">
+<code class="descclassname">rexfw.convenience.</code><code class="descname">create_default_HMCStepRENS_params</code><span class="sig-paren">(</span><em>schedule</em>, <em>n_intermediate_steps</em>, <em>hmc_traj_length</em>, <em>n_hmc_iterations</em>, <em>timesteps</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.create_default_HMCStepRENS_params" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.create_default_LMDRENS_params">
+<code class="descclassname">rexfw.convenience.</code><code class="descname">create_default_LMDRENS_params</code><span class="sig-paren">(</span><em>schedule</em>, <em>n_steps</em>, <em>timesteps</em>, <em>gamma</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.create_default_LMDRENS_params" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.create_default_RE_params">
+<code class="descclassname">rexfw.convenience.</code><code class="descname">create_default_RE_params</code><span class="sig-paren">(</span><em>n_replicas</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.create_default_RE_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates default RE exchange parameters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n_replicas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – the number of replicas</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a list of parameter objects holding information required to perform swaps</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list of <a class="reference internal" href="rexfw.slgenerators.html#rexfw.slgenerators.ExchangeParams" title="rexfw.slgenerators.ExchangeParams"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExchangeParams</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.create_default_stats_elements">
+<code class="descclassname">rexfw.convenience.</code><code class="descname">create_default_stats_elements</code><span class="sig-paren">(</span><em>replica_names</em>, <em>variable_name</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.create_default_stats_elements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates default sampling statistics “elements”, each representing
+a tracked quantity such as acceptance rate, step size etc.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>replica_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a>) – a list of all replica names</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">MCMC acceptance rate, RE acceptance rate and step size quantity objects</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.6)">tuple</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.create_default_stats_writers">
+<code class="descclassname">rexfw.convenience.</code><code class="descname">create_default_stats_writers</code><span class="sig-paren">(</span><em>sim_path</em>, <em>variable_name</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.create_default_stats_writers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates default statistics writers, which print sampling statistics
+on the screen or write it to a text file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sim_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – the output folder</li>
+<li><strong>variable_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – the name of the only variable to be sampled</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">default MCMC and RE statistics writers</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.6)">tuple</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.create_directories">
+<code class="descclassname">rexfw.convenience.</code><code class="descname">create_directories</code><span class="sig-paren">(</span><em>sim_folder</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.create_directories" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates simulation output folders</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.setup_default_re_master">
+<code class="descclassname">rexfw.convenience.</code><code class="descname">setup_default_re_master</code><span class="sig-paren">(</span><em>n_replicas</em>, <em>sim_path</em>, <em>comm</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.setup_default_re_master" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a default <a class="reference internal" href="rexfw.remasters.html#rexfw.remasters.ExchangeMaster" title="rexfw.remasters.ExchangeMaster"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExchangeMaster</span></code></a> object for Replica Exchange. This should suffice
+for most applications.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>n_replicas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – the number of replicas</li>
+<li><strong>sim_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – the folder where simulation output will be stored</li>
+<li><strong>comm</strong> (<a class="reference internal" href="rexfw.communicators.html#rexfw.communicators.AbstractCommunicator" title="rexfw.communicators.AbstractCommunicator"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractCommunicator</span></code></a>) – a <a class="reference internal" href="rexfw.communicators.html#rexfw.communicators.AbstractCommunicator" title="rexfw.communicators.AbstractCommunicator"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractCommunicator</span></code></a> object responsible for communication
+with the replicas</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a for all practical purposes sufficient <a class="reference internal" href="rexfw.remasters.html#rexfw.remasters.ExchangeMaster" title="rexfw.remasters.ExchangeMaster"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExchangeMaster</span></code></a> object</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="rexfw.remasters.html#rexfw.remasters.ExchangeMaster" title="rexfw.remasters.ExchangeMaster"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExchangeMaster</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="rexfw.convenience.setup_default_replica">
+<code class="descclassname">rexfw.convenience.</code><code class="descname">setup_default_replica</code><span class="sig-paren">(</span><em>init_state</em>, <em>pdf</em>, <em>sampler_class</em>, <em>sampler_params</em>, <em>output_folder</em>, <em>comm</em>, <em>rank</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.convenience.setup_default_replica" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a default <a class="reference internal" href="rexfw.replicas.html#rexfw.replicas.Replica" title="rexfw.replicas.Replica"><code class="xref py py-class docutils literal notranslate"><span class="pre">Replica</span></code></a> object for replica exchange. This should suffice
+for most applications.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>init_state</strong> (<em>depends on your application</em>) – initial state for the replica</li>
+<li><strong>pdf</strong> (<a class="reference internal" href="rexfw.pdfs.html#rexfw.pdfs.AbstractPDF" title="rexfw.pdfs.AbstractPDF"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractPDF</span></code></a>) – a <a class="reference internal" href="rexfw.pdfs.html#rexfw.pdfs.AbstractPDF" title="rexfw.pdfs.AbstractPDF"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractPDF</span></code></a> object which describes the probability density
+the replica will sample</li>
+<li><strong>sampler_class</strong> (<a class="reference internal" href="rexfw.samplers.html#rexfw.samplers.AbstractSampler" title="rexfw.samplers.AbstractSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSampler</span></code></a>) – the class of the sampler used to sample from this replica’s
+PDF</li>
+<li><strong>sampler_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – a dict containing additional keyword arguments your
+sampler might need</li>
+<li><strong>output_folder</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – the folder where simulation output will be stored</li>
+<li><strong>comm</strong> (<a class="reference internal" href="rexfw.communicators.html#rexfw.communicators.AbstractCommunicator" title="rexfw.communicators.AbstractCommunicator"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractCommunicator</span></code></a>) – a <a class="reference internal" href="rexfw.communicators.html#rexfw.communicators.AbstractCommunicator" title="rexfw.communicators.AbstractCommunicator"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractCommunicator</span></code></a> object responsible for communication
+with the master object</li>
+<li><strong>rank</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – the index of this replica, usually 1, 2, …</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a for all practical purposes sufficient <a class="reference internal" href="rexfw.replicas.html#rexfw.replicas.Replica" title="rexfw.replicas.Replica"><code class="xref py py-class docutils literal notranslate"><span class="pre">Replica</span></code></a> object</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="rexfw.replicas.html#rexfw.replicas.Replica" title="rexfw.replicas.Replica"><code class="xref py py-class docutils literal notranslate"><span class="pre">Replica</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">rexfw.convenience package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-rexfw.convenience.statistics">rexfw.convenience.statistics module</a></li>
+<li><a class="reference internal" href="#module-rexfw.convenience">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/rexfw.convenience.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Simeon Carstens.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/rexfw.convenience.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

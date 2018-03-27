@@ -1,0 +1,22 @@
+rexfw.pdfs package
+==================
+
+Submodules
+----------
+
+rexfw.pdfs.normal module
+------------------------
+
+.. automodule:: rexfw.pdfs.normal
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: rexfw.pdfs
+    :members:
+    :undoc-members:
+    :show-inheritance:

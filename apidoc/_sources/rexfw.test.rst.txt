@@ -1,0 +1,85 @@
+rexfw.test package
+==================
+
+Subpackages
+-----------
+
+.. toctree::
+
+    rexfw.test.cases
+
+Submodules
+----------
+
+rexfw.test.first module
+-----------------------
+
+.. automodule:: rexfw.test.first
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+rexfw.test.normal module
+------------------------
+
+.. automodule:: rexfw.test.normal
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+rexfw.test.oldcompare\_amdrens module
+-------------------------------------
+
+.. automodule:: rexfw.test.oldcompare_amdrens
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+rexfw.test.oldcompare\_hmcrens module
+-------------------------------------
+
+.. automodule:: rexfw.test.oldcompare_hmcrens
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+rexfw.test.oldcompare\_lmdrens module
+-------------------------------------
+
+.. automodule:: rexfw.test.oldcompare_lmdrens
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+rexfw.test.test\_new\_ubq module
+--------------------------------
+
+.. automodule:: rexfw.test.test_new_ubq
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+rexfw.test.test\_old\_ubq module
+--------------------------------
+
+.. automodule:: rexfw.test.test_old_ubq
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+rexfw.test.test\_pdfs module
+----------------------------
+
+.. automodule:: rexfw.test.test_pdfs
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: rexfw.test
+    :members:
+    :undoc-members:
+    :show-inheritance:

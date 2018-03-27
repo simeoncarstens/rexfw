@@ -1,0 +1,22 @@
+rexfw.remasters package
+=======================
+
+Submodules
+----------
+
+rexfw.remasters.requests module
+-------------------------------
+
+.. automodule:: rexfw.remasters.requests
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: rexfw.remasters
+    :members:
+    :undoc-members:
+    :show-inheritance:

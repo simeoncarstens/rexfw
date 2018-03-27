@@ -1,0 +1,22 @@
+rexfw.test.cases.pdf package
+============================
+
+Submodules
+----------
+
+rexfw.test.cases.pdf.likelihoods module
+---------------------------------------
+
+.. automodule:: rexfw.test.cases.pdf.likelihoods
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: rexfw.test.cases.pdf
+    :members:
+    :undoc-members:
+    :show-inheritance:

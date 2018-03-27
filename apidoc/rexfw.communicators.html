@@ -1,0 +1,203 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>rexfw.communicators package &#8212; rexfw 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="rexfw-communicators-package">
+<h1>rexfw.communicators package<a class="headerlink" href="#rexfw-communicators-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-rexfw.communicators.mpi">
+<span id="rexfw-communicators-mpi-module"></span><h2>rexfw.communicators.mpi module<a class="headerlink" href="#module-rexfw.communicators.mpi" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="rexfw.communicators.mpi.MPICommunicator">
+<em class="property">class </em><code class="descclassname">rexfw.communicators.mpi.</code><code class="descname">MPICommunicator</code><a class="headerlink" href="#rexfw.communicators.mpi.MPICommunicator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#rexfw.communicators.AbstractCommunicator" title="rexfw.communicators.AbstractCommunicator"><code class="xref py py-class docutils literal notranslate"><span class="pre">rexfw.communicators.AbstractCommunicator</span></code></a></p>
+<dl class="method">
+<dt id="rexfw.communicators.mpi.MPICommunicator._dest_to_rank">
+<code class="descname">_dest_to_rank</code><span class="sig-paren">(</span><em>dest</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.communicators.mpi.MPICommunicator._dest_to_rank" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="rexfw.communicators.mpi.MPICommunicator.comm">
+<code class="descname">comm</code><em class="property"> = &lt;mpi4py.MPI.Intracomm object&gt;</em><a class="headerlink" href="#rexfw.communicators.mpi.MPICommunicator.comm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="rexfw.communicators.mpi.MPICommunicator.recv">
+<code class="descname">recv</code><span class="sig-paren">(</span><em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.communicators.mpi.MPICommunicator.recv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receives objects, mostly of type <a class="reference internal" href="rexfw.html#rexfw.Parcel" title="rexfw.Parcel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parcel</span></code></a>, from a replica or master object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the received object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">depends</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="rexfw.communicators.mpi.MPICommunicator.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>obj</em>, <em>dest</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.communicators.mpi.MPICommunicator.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends objects, mostly of type <a class="reference internal" href="rexfw.html#rexfw.Parcel" title="rexfw.Parcel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parcel</span></code></a>, to a replica or master object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>obj</strong> (<em>depends</em>) – object to send</li>
+<li><strong>dest</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – name of destination object</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="rexfw.communicators.mpi.MPICommunicator.sendrecv">
+<code class="descname">sendrecv</code><span class="sig-paren">(</span><em>obj</em>, <em>dest</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.communicators.mpi.MPICommunicator.sendrecv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rexfw.communicators">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-rexfw.communicators" title="Permalink to this headline">¶</a></h2>
+<p>Communicator classes which handle communication between master and slaves</p>
+<dl class="class">
+<dt id="rexfw.communicators.AbstractCommunicator">
+<em class="property">class </em><code class="descclassname">rexfw.communicators.</code><code class="descname">AbstractCommunicator</code><a class="headerlink" href="#rexfw.communicators.AbstractCommunicator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="method">
+<dt id="rexfw.communicators.AbstractCommunicator.recv">
+<code class="descname">recv</code><span class="sig-paren">(</span><em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.communicators.AbstractCommunicator.recv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receives objects, mostly of type <a class="reference internal" href="rexfw.html#rexfw.Parcel" title="rexfw.Parcel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parcel</span></code></a>, from a replica or master object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the received object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">depends</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="rexfw.communicators.AbstractCommunicator.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>obj</em>, <em>dest</em><span class="sig-paren">)</span><a class="headerlink" href="#rexfw.communicators.AbstractCommunicator.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends objects, mostly of type <a class="reference internal" href="rexfw.html#rexfw.Parcel" title="rexfw.Parcel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parcel</span></code></a>, to a replica or master object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>obj</strong> (<em>depends</em>) – object to send</li>
+<li><strong>dest</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – name of destination object</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">rexfw.communicators package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-rexfw.communicators.mpi">rexfw.communicators.mpi module</a></li>
+<li><a class="reference internal" href="#module-rexfw.communicators">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/rexfw.communicators.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Simeon Carstens.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/rexfw.communicators.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

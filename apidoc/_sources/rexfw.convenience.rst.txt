@@ -1,0 +1,22 @@
+rexfw.convenience package
+=========================
+
+Submodules
+----------
+
+rexfw.convenience.statistics module
+-----------------------------------
+
+.. automodule:: rexfw.convenience.statistics
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: rexfw.convenience
+    :members:
+    :undoc-members:
+    :show-inheritance:

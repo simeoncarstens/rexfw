@@ -1,0 +1,22 @@
+rexfw.replicas package
+======================
+
+Submodules
+----------
+
+rexfw.replicas.requests module
+------------------------------
+
+.. automodule:: rexfw.replicas.requests
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: rexfw.replicas
+    :members:
+    :undoc-members:
+    :show-inheritance:

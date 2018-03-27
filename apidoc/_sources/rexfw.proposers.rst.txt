@@ -1,0 +1,22 @@
+rexfw.proposers package
+=======================
+
+Submodules
+----------
+
+rexfw.proposers.params module
+-----------------------------
+
+.. automodule:: rexfw.proposers.params
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: rexfw.proposers
+    :members:
+    :undoc-members:
+    :show-inheritance:

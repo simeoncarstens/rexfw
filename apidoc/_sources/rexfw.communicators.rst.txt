@@ -1,0 +1,22 @@
+rexfw.communicators package
+===========================
+
+Submodules
+----------
+
+rexfw.communicators.mpi module
+------------------------------
+
+.. automodule:: rexfw.communicators.mpi
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: rexfw.communicators
+    :members:
+    :undoc-members:
+    :show-inheritance:

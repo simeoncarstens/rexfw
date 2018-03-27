@@ -1,0 +1,22 @@
+rexfw.test.cases.proposers package
+==================================
+
+Submodules
+----------
+
+rexfw.test.cases.proposers.params module
+----------------------------------------
+
+.. automodule:: rexfw.test.cases.proposers.params
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: rexfw.test.cases.proposers
+    :members:
+    :undoc-members:
+    :show-inheritance:
