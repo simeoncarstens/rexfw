@@ -172,7 +172,10 @@ class ExchangeMaster(object):
         :rtype: numpy.ndarray
         '''
 
-        return np.exp(-np.sum(works,1)) > np.random.uniform(size=len(works))
+        exponent = -np.sum(works,1)
+        exponent = np.clip(exponent, a_min=None, a_max=np.log(np.finfo(float).max))
+        
+        return np.exp(exponent) > np.random.uniform(size=len(works))
 
     def _send_accept_exchange_request(self, dest):
         '''
