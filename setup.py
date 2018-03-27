@@ -23,7 +23,7 @@ URL             = "http://www.simeon-carstens.com"
 SUMMARY         = "MPI-based Replica Exchange framework"
 DESCRIPTION     = __doc__
 LICENSE         = 'MIT'
-REQUIRES        = ['numpy', 'csb']
+REQUIRES        = ['numpy', 'mpi4py']
 
 os.environ['CFLAGS'] = '-Wno-cpp'
 setup(
