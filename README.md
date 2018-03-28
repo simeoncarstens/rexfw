@@ -10,7 +10,7 @@ I use it to enhance sampling from complex posterior distributions arising in my 
 
 ## Setting up rexfw
 
-Given only two dependencies (numpy and mpi4py), installing rexfw is as easy as cloning this repository and then running the setup script:
+Given only three dependencies (a MPI implementation, numpy and mpi4py), installing rexfw is as easy as cloning this repository and then running the setup script:
 
     $ python setup.py install
 
