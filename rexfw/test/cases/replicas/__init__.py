@@ -252,7 +252,7 @@ class testReplica(unittest.TestCase):
                                                            smin + offset,
                                                            smax + offset)
         self.assertTrue(os.path.exists(fname))
-        dumped_samples = np.load(fname)
+        dumped_samples = np.load(fname, allow_pickle=True)
         self.assertTrue(np.all(np.array(dumped_samples) == buffered_samples[::step]))
         self.assertEqual(len(self._replica.samples), 0)
 
@@ -267,7 +267,7 @@ class testReplica(unittest.TestCase):
 
         fname = '{}energies/{}.npy'.format(self._replica.output_folder, self._replica.name)
         self.assertTrue(os.path.exists(fname))
-        energies = np.load(fname)
+        energies = np.load(fname, allow_pickle=True)
         self.assertEqual(len(energies), 1)
         self.assertEqual(energies[0], 3)
         self.assertEqual(len(self._replica.energy_trace), 0)

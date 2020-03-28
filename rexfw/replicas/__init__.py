@@ -211,7 +211,7 @@ class Replica(object):
                                                               self.name, 
                                                               request.s_min + request.offset, 
                                                               request.s_max + request.offset)
-        with open(filename, 'w') as opf:
+        with open(filename, 'wb') as opf:
             from pickle import dump
             dump(self.samples[::request.dump_step], opf, 2)
 
