@@ -17,18 +17,18 @@ class ParamInterpolationPDF(object):
         l = lambda i: i / float(n_steps)
         self.interp_params = lambda i: {name: (  1.0 - l(i)) * pdf_params[name][0] 
                                                  + l(i) * pdf_params[name][1] 
-                                        for name in pdf_params.iterkeys()}
+                                        for name in pdf_params.keys()}
 
     def _change_pdf_params(self, i):
 
         self._old_param_values = {}
-        for name, value in self.interp_params(i).iteritems():
+        for name, value in self.interp_params(i).items():
             self._old_param_values.update(**{name: self.pdf[name]})
             self.pdf[name] = value
 
     def _reset_pdf_params(self):
         
-        for name, value in self._old_param_values.iteritems():
+        for name, value in self._old_param_values.items():
             self.pdf[name] = value
 
     def log_prob(self, x, i):
@@ -292,7 +292,7 @@ class HMCStepRENSProposer(AbstractRENSProposer):
         
         if self._interpolating_pdf.__name__ ==  'OldISDInterpolatingPDF':
             pdf = self._interpolating_pdf(pdf, p, self.posterior)
-            print "loaded proprietary posterior"
+            print("loaded proprietary posterior")
         else:
             pdf = self._interpolating_pdf(pdf, pdf_params, n_steps)
 

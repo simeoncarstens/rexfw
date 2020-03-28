@@ -44,9 +44,9 @@ class StandardSwapListGenerator(AbstractSwapListGenerator):
 
         if len(self._replica_list) == 2:
             self._which = 0
-        swap_list = zip(self._replica_list[self._which::2],
+        swap_list = list(zip(self._replica_list[self._which::2],
                         self._replica_list[self._which + 1::2],
-                        self._param_list[self._which::2])
+                        self._param_list[self._which::2]))
         self._which = int(not self._which)
 
         return swap_list

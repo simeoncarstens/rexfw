@@ -28,7 +28,7 @@ def create_default_HMCStepRENS_params(schedule, n_intermediate_steps, hmc_traj_l
     from rexfw.proposers.params import HMCStepRENSProposerParams
 
     prop_params = [HMCStepRENSProposerParams(pdf_params={k: (schedule[k][i+1], schedule[k][i]) 
-                                                         for k in schedule.keys()}, 
+                                                         for k in list(schedule.keys())}, 
                                               n_steps=n_intermediate_steps,
                                               timestep=timesteps[i],
                                               hmc_traj_length=hmc_traj_length,
@@ -45,7 +45,7 @@ def create_default_LMDRENS_params(schedule, n_steps, timesteps, gamma):
     from rexfw.proposers.params import LMDRENSProposerParams
 
     prop_params = [LMDRENSProposerParams({k: (schedule[k][i+1], schedule[k][i]) 
-                                              for k in schedule.keys()}, 
+                                              for k in list(schedule.keys())}, 
                                               n_steps, timesteps[i], gamma)
                    for i in range(len(timesteps))]
     param_list = [ExchangeParams(['prop{}'.format(i+1), 'prop{}'.format(i+2)], prop_params[i]) 
@@ -60,7 +60,7 @@ def create_default_LMDRENS_params(schedule, n_steps, timesteps, gamma):
     from rexfw.proposers.params import LMDRENSProposerParams
 
     prop_params = [LMDRENSProposerParams({k: (schedule[k][i+1], schedule[k][i]) 
-                                              for k in schedule.keys()}, 
+                                              for k in list(schedule.keys())}, 
                                               n_steps, timesteps[i], gamma)
                    for i in range(len(timesteps))]
     param_list = [ExchangeParams(['prop{}'.format(i+1), 'prop{}'.format(i+2)], prop_params[i]) 
@@ -76,7 +76,7 @@ def create_default_AMDRENS_params(schedule, n_steps, timesteps,
     from rexfw.proposers.params import AMDRENSProposerParams
 
     prop_params = [AMDRENSProposerParams({k: (schedule[k][i+1], schedule[k][i]) 
-                                              for k in schedule.keys()}, 
+                                              for k in list(schedule.keys())}, 
                                               n_steps, timesteps[i], 
                                               collision_probability, update_interval)
                    for i in range(len(timesteps))]

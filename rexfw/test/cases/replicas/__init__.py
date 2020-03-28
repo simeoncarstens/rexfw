@@ -316,7 +316,7 @@ class testReplica(unittest.TestCase):
         params = ExchangeParams(['mock_proposer1', 'mock_proposer2'], None)
         proposer = self._replica._pick_proposer(params)
 
-        self.assertEqual(proposer, self._replica.proposers.items()[0][0])
+        self.assertEqual(proposer, list(self._replica.proposers.items())[0][0])
 
     def testCalculateProposal(self):
 

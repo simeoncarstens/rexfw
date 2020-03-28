@@ -21,9 +21,9 @@ class FilterableQuantityList(list):
         '''
 
         criterion = lambda x: sum([x.__getattribute__(k) == v 
-                                   for k, v in kwargs.iteritems() if hasattr(x, k)]) == len(kwargs)
+                                   for k, v in kwargs.items() if hasattr(x, k)]) == len(kwargs)
         
-        return self.__class__(filter(criterion, self))
+        return self.__class__(list(filter(criterion, self)))
 
         
 class Statistics(object):

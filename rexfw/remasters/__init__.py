@@ -95,7 +95,7 @@ class ExchangeMaster(object):
         acc = self._calculate_acceptance(works)
         self._trigger_exchanges(swap_list, acc)
 
-        return zip(acc, works, heats)
+        return list(zip(acc, works, heats))
 
     def _send_get_state_and_energy_request(self, replica1, replica2):
         '''
@@ -315,7 +315,7 @@ class ExchangeMaster(object):
         :type statistics_update_interval: int
         '''
 
-        for step in xrange(n_iterations):
+        for step in range(n_iterations):
             if step % swap_interval == 0 and step > 0:
                 swap_list = self._calculate_swap_list(step)
                 results = self._perform_exchanges(swap_list)

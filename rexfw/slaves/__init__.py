@@ -27,7 +27,7 @@ class Slave(object):
         '''
         while True:
             parcel = self._receive_parcel()
-            if parcel.receiver in self.replicas.iterkeys():
+            if parcel.receiver in iter(self.replicas.keys()):
                 result = self.replicas[parcel.receiver].process_request(parcel.data)                
                 if result == -1:
                     break
@@ -62,11 +62,11 @@ class UDCountsSlave(object):
 
         while True:
             parcel = self._receive_parcel()
-            if parcel.receiver in self.replicas.iterkeys():
+            if parcel.receiver in iter(self.replicas.keys()):
                 result = self.replicas[parcel.receiver].process_request(parcel.data)                
                 if result == -1:
                     import numpy
-                    replica_name = self.replicas[self.replicas.keys()[0]].name
+                    replica_name = self.replicas[list(self.replicas.keys())[0]].name
                     numpy.save(self._sim_path + 'statistics/up_down_counts_{}.npy'.format(replica_name),
                                self.replicas[replica_name].up_down_counts)
                     break

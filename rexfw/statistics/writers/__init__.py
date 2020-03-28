@@ -381,7 +381,7 @@ class StandardFileREWorksStatisticsWriter(AbstractStatisticsWriter):
 
     def write(self, elements):
 
-        from cPickle import dump
+        from pickle import dump
         
         for e in elements:
             with open(self._outfolder + 'works_{}-{}.pickle'.format(*e.origins), 'w') as opf:
@@ -402,7 +402,7 @@ class StandardFileREHeatsStatisticsWriter(AbstractStatisticsWriter):
 
     def write(self, elements):
 
-        from cPickle import dump
+        from pickle import dump
         
         for e in elements:
             with open(self._outfolder + 'heats_{}-{}.pickle'.format(*e.origins), 'w') as opf:
