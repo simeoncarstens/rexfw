@@ -2,6 +2,8 @@
 First steps with rexfw
 ======================
 
+--- checkout the ``py3`` branch for a Python 3 version ---
+
 What is rexfw about?
 --------------------
 rexfw is a simple (for me, at least...) Python 2.7 framework to enhance sampling in MCMC simulations using the Replica Exchange algorithm (RE; Swendsen & Wang, Phys. Rev. Lett. 1986). All you need to do is plug in your own probability distributions and MCMC samplers, which have to expose a simple interface to be compatible with this package. It can be easily extended to RE-related methods such as Replica Exchange with Nonequilibrium Switches (RENS; Ballard & Jarzynski, PNAS 2009).
