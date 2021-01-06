@@ -18,6 +18,12 @@ Given only three dependencies (a MPI implementation, numpy and mpi4py), installi
 
 possibly with ``--user``, if you don't have administrator privileges and instead need to install rexfw in your home directory.
 
+Another option to get started is to use the provied `Nix <https://nixos.org>`_ shell. After you installed Nix, just type::
+
+    $ nix-shell
+
+and the Nix package manager will download and, if necessary, build, all required dependencies, down to the system level. You will then be dropped into a shell, in which ``rexfw`` is in your ``PYTHONPATH`` and ready to use.
+
 To get started using rexfw, I recommend you to take a look at the file ``rexfw/tests/normal.py`` file which is a commented script using rexfw to sample from a normal distribution. Check the imports in this script for further comments, especially the probability distribution and sampler interfaces. The example can be run with::
 
     $ cd rexfw/test
